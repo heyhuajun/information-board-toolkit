@@ -18,6 +18,9 @@ COPY . .
 ARG BUILD_DATE
 ENV NEXT_TELEMETRY_DISABLED=1
 
+# Clean any existing build artifacts
+RUN rm -rf .next
+
 RUN npm run build
 
 # Production image, copy all the files and run next
