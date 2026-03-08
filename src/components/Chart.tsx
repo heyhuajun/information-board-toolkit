@@ -9,8 +9,6 @@ import {
   PieChart,
   Pie,
   Cell,
-  DoughnutChart,
-  Doughnut,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -70,7 +68,7 @@ export default function Chart({ chartType, title, data }: ChartComponent) {
               />
             ))}
           </BarChart>
-        ) : chartType === 'pie' ? (
+        ) : (chartType === 'pie' || chartType === 'doughnut') ? (
           <PieChart>
             <Pie
               data={data.labels.map((label, i) => ({
@@ -82,6 +80,7 @@ export default function Chart({ chartType, title, data }: ChartComponent) {
               labelLine={false}
               label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
               outerRadius={80}
+              innerRadius={chartType === 'doughnut' ? 40 : 0}
               fill="#8884d8"
               dataKey="value"
             >
@@ -92,29 +91,6 @@ export default function Chart({ chartType, title, data }: ChartComponent) {
             <Tooltip />
             <Legend />
           </PieChart>
-        ) : chartType === 'doughnut' ? (
-          <DoughnutChart>
-            <Doughnut
-              data={data.labels.map((label, i) => ({
-                name: label,
-                value: data.datasets[0].data[i]
-              }))}
-              cx="50%"
-              cy="50%"
-              labelLine={false}
-              label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-              outerRadius={80}
-              innerRadius={40}
-              fill="#8884d8"
-              dataKey="value"
-            >
-              {data.labels.map((_, index) => (
-                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-              ))}
-            </Doughnut>
-            <Tooltip />
-            <Legend />
-          </DoughnutChart>
         ) : null}
       </ResponsiveContainer>
     </div>
