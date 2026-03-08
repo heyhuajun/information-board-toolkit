@@ -8,12 +8,16 @@
 
 ## ✨ 核心功能
 
-- **美观展示** - 11 种专业组件，自动适配移动端
+- **美观展示** - 22 种专业组件，自动适配移动端
 - **快速分享** - 一键生成分享链接，支持设置有效期
 - **Agent 友好** - 简单的 API 接口，易于集成
 - **访问统计** - 实时浏览量统计
+- **数据溯源** - 点击查看来源、时间、置信度
+- **版本管理** - 保留历史版本，可对比差异
 
 ## 🧩 组件库
+
+### 基础组件 (11)
 
 | 组件 | 用途 |
 |------|------|
@@ -28,6 +32,28 @@
 | Image | 图片 |
 | Alert | 提示框 |
 | Divider | 分隔线 |
+
+### Phase 1 组件 (5)
+
+| 组件 | 用途 |
+|------|------|
+| DataSource | 数据溯源，点击展开显示来源/时间/置信度/新鲜度 |
+| CompareTable | 对比表格，A/B 对比，高亮差异，推荐标记 |
+| DataBadge | 数据标注，置信度星级⭐、新鲜度标签🟢🟡🔴 |
+| Tag | 标签，5 种颜色，支持图标、关闭按钮 |
+| Badge | 徽章，数字徽章、小红点、自定义颜色 |
+
+### Phase 2 组件 (7)
+
+| 组件 | 用途 |
+|------|------|
+| Template | 模板机制，预设竞品分析、市场研究等模板 |
+| VersionHistory | 版本管理，版本列表、恢复历史、对比差异 |
+| Comments | 评论/反馈，添加评论、回复、时间线显示 |
+| Quote | 引用块，用户原声展示，带头像/来源/角色 |
+| Timeline | 时间轴，认证流程/用户旅程可视化，垂直/水平 |
+| Progress | 进度条，百分比显示，自动状态判断 |
+| Collapse | 折叠区域，展开/收起详细内容 |
 
 ## 🚀 快速开始
 
@@ -136,60 +162,107 @@ Response:
 
 ## 🎨 组件示例
 
-### Card Grid
+### DataSource 数据溯源
 
 ```json
 {
-  "type": "card-grid",
-  "columns": 3,
-  "cards": [
+  "type": "dataSource",
+  "source": "Amazon",
+  "url": "https://amazon.com/dp/B0XXXXX",
+  "timestamp": "2026-03-08T10:30:00Z",
+  "confidence": 95,
+  "freshness": 2,
+  "content": "市场规模 $1.2B，年增长率 15%"
+}
+```
+
+### CompareTable 对比表格
+
+```json
+{
+  "type": "compareTable",
+  "title": "竞品对比",
+  "columns": [
+    { "key": "a", "label": "方案 A" },
+    { "key": "b", "label": "方案 B" }
+  ],
+  "rows": [
+    { "feature": "价格", "valueA": "$29.99", "valueB": "$35.00", "winner": "A" },
+    { "feature": "评分", "valueA": "4.5", "valueB": "4.8", "winner": "B" }
+  ],
+  "recommend": "A"
+}
+```
+
+### DataBadge 数据标注
+
+```json
+{
+  "type": "dataBadge",
+  "confidence": 95,
+  "freshness": "2026-03-06T00:00:00Z",
+  "showConfidence": true,
+  "showFreshness": true
+}
+```
+
+### Timeline 时间轴
+
+```json
+{
+  "type": "timeline",
+  "direction": "vertical",
+  "items": [
+    { "title": "需求确认", "date": "2026-03-01", "status": "completed" },
+    { "title": "开发中", "date": "2026-03-08", "status": "current" },
+    { "title": "上线", "status": "pending" }
+  ]
+}
+```
+
+### VersionHistory 版本管理
+
+```json
+{
+  "type": "versionHistory",
+  "currentVersion": 3,
+  "versions": [
     {
-      "title": "市场规模",
-      "value": "$1.2B",
-      "change": "+15%",
-      "changeType": "positive"
+      "version": 1,
+      "createdAt": "2026-03-01",
+      "author": "lingxi",
+      "changes": ["初始版本"]
     },
     {
-      "title": "竞品数量",
-      "value": "23"
+      "version": 2,
+      "createdAt": "2026-03-05",
+      "changes": ["添加竞品对比", "更新价格数据"]
     }
   ]
 }
 ```
 
-### Table
+### Comments 评论
 
 ```json
 {
-  "type": "table",
-  "title": "竞品对比",
-  "headers": ["产品", "价格", "评分"],
-  "rows": [
-    ["产品 A", "$29.99", "4.5"],
-    ["产品 B", "$35.00", "4.3"]
+  "type": "comments",
+  "comments": [
+    {
+      "id": "1",
+      "author": "山海",
+      "content": "这个分析很到位",
+      "createdAt": "2026-03-08T10:00:00Z",
+      "replies": [
+        {
+          "id": "1-1",
+          "author": "灵犀",
+          "content": "同意，数据来源可靠",
+          "createdAt": "2026-03-08T11:00:00Z"
+        }
+      ]
+    }
   ]
-}
-```
-
-### List
-
-```json
-{
-  "type": "list",
-  "title": "关键发现",
-  "items": [
-    { "icon": "✅", "text": "市场需求持续增长" },
-    { "icon": "⚠️", "text": "竞争激烈" }
-  ]
-}
-```
-
-### Markdown
-
-```json
-{
-  "type": "markdown",
-  "content": "## 分析结论\n\n### 优势\n- 市场需求大\n- 竞争相对较小"
 }
 ```
 
@@ -239,11 +312,15 @@ services:
 - **投资组合** - 给朋友分享持仓数据
 - **产品对比** - 给客户对比产品信息
 - **市场调研** - 给团队分享市场洞察
+- **用户研究** - Quote 组件展示用户原声
+- **合规报告** - Collapse 组件折叠法规条文
+- **项目进度** - Timeline 组件展示里程碑
+- **版本管理** - VersionHistory 组件追踪变更
 
 ## 🛠️ 技术栈
 
-- **框架**: Next.js 14 (App Router)
-- **样式**: Tailwind CSS
+- **框架**: Next.js 16 (App Router)
+- **样式**: Tailwind CSS 4
 - **数据库**: SQLite (better-sqlite3)
 - **图表**: Recharts
 - **Markdown**: react-markdown
