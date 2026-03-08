@@ -12,10 +12,17 @@ export type ComponentType =
   | 'image'
   | 'alert'
   | 'divider'
+  | 'dataSource'      // Phase 1: 数据溯源
+  | 'compareTable'    // Phase 1: 对比表格
+  | 'dataBadge'       // Phase 1: 数据标注
+  | 'tag'             // Phase 1: 标签
+  | 'badge'           // Phase 1: 徽章
 
 export type ChangeType = 'positive' | 'negative' | 'neutral'
 export type AlertType = 'info' | 'success' | 'warning' | 'error'
 export type ChartType = 'line' | 'bar' | 'pie' | 'doughnut'
+export type TagColor = 'default' | 'primary' | 'success' | 'warning' | 'danger'
+export type Size = 'sm' | 'md' | 'lg'
 
 // 基础组件接口
 export interface BaseComponent {
@@ -117,6 +124,74 @@ export interface DividerComponent extends BaseComponent {
   type: 'divider'
 }
 
+// ========== Phase 1 新组件 ==========
+
+// DataSource 数据溯源组件
+export interface DataSourceComponent extends BaseComponent {
+  type: 'dataSource'
+  source: string
+  url?: string
+  timestamp: Date | string
+  confidence?: number
+  freshness?: number
+  content?: string
+  children?: Component[]
+}
+
+// CompareTable 对比表格组件
+export interface CompareColumn {
+  key: string
+  label: string
+}
+
+export interface CompareRow {
+  feature: string
+  valueA: string | number
+  valueB: string | number
+  winner?: 'A' | 'B' | 'tie'
+  note?: string
+}
+
+export interface CompareTableComponent extends BaseComponent {
+  type: 'compareTable'
+  title?: string
+  columns: CompareColumn[]
+  rows: CompareRow[]
+  highlightDiff?: boolean
+  recommend?: 'A' | 'B'
+}
+
+// DataBadge 数据标注组件
+export interface DataBadgeComponent extends BaseComponent {
+  type: 'dataBadge'
+  confidence?: number
+  freshness?: Date | string | number
+  showConfidence?: boolean
+  showFreshness?: boolean
+  size?: Size
+}
+
+// Tag 标签组件
+export interface TagComponent extends BaseComponent {
+  type: 'tag'
+  label: string
+  color?: TagColor
+  icon?: string
+  size?: Size
+  closable?: boolean
+  onClick?: () => void
+}
+
+// Badge 徽章组件
+export interface BadgeComponent extends BaseComponent {
+  type: 'badge'
+  count?: number
+  dot?: boolean
+  color?: string
+  content?: string
+  children?: Component[]
+}
+
 // 联合类型
 export type Component =
   | SectionComponent
@@ -130,6 +205,11 @@ export type Component =
   | ImageComponent
   | AlertComponent
   | DividerComponent
+  | DataSourceComponent
+  | CompareTableComponent
+  | DataBadgeComponent
+  | TagComponent
+  | BadgeComponent
 
 // Board 数据结构
 export interface BoardData {
