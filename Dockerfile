@@ -1,55 +1,39 @@
-FROM node:20-alpine AS base
+FROM node:20-alpine
 
-# Install dependencies only when needed
-FROM base AS deps
+# Install dependencies
 RUN apk add --no-cache libc6-compat python3 make g++
+
 WORKDIR /app
 
+# Copy package files
 COPY package.json package-lock.json* ./
+
+# Install dependencies
 RUN npm ci
-
-# Rebuild the source code only when needed
-FROM base AS builder
-WORKDIR /app
-
-# Copy dependencies first
-COPY --from=deps /app/node_modules ./node_modules
 
 # Copy source code
 COPY . .
 
-# Add build timestamp to invalidate cache
+# Add build timestamp to force rebuild
 ARG BUILD_DATE
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV BUILD_DATE=${BUILD_DATE}
+ENV NODE_ENV=production
 
-# Force cache invalidation by using BUILD_DATE
-RUN echo "Building at ${BUILD_DATE}" > /tmp/build_timestamp
-
-# Clean ALL caches before build (including Next.js cache, Turbopack cache, npm cache)
+# Clean all caches
 RUN rm -rf .next .turbo node_modules/.cache /tmp/* ~/.npm ~/.cache
 
-# Run build
-RUN npm run build
+# Build
+RUN echo "Building at ${BUILD_DATE}" && npm run build
 
-# Production image, copy all the files and run next
-FROM base AS runner
-WORKDIR /app
-
-ENV NODE_ENV=production
-ENV NEXT_TELEMETRY_DISABLED=1
-
-RUN addgroup --system --gid 1001 nodejs
-RUN adduser --system --uid 1001 nextjs
-
-# Copy necessary files
-COPY --from=builder /app/public ./public
-COPY --from=builder /app/.next ./.next
-COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/package.json ./package.json
+# Create user
+RUN addgroup --system --gid 1001 nodejs && \
+    adduser --system --uid 1001 nextjs
 
 # Create data directory
-RUN mkdir -p /app/data && chown nextjs:nodejs /app/data
+RUN mkdir -p /app/data && chown -R nextjs:nodejs /app
+
+# Set permissions
 RUN chown -R nextjs:nodejs /app/.next
 
 USER nextjs
