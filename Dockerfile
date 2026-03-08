@@ -11,7 +11,11 @@ RUN npm ci
 # Rebuild the source code only when needed
 FROM base AS builder
 WORKDIR /app
+
+# Copy dependencies first
 COPY --from=deps /app/node_modules ./node_modules
+
+# Copy source code
 COPY . .
 
 # Add build timestamp to invalidate cache
@@ -22,9 +26,10 @@ ENV BUILD_DATE=${BUILD_DATE}
 # Force cache invalidation by using BUILD_DATE
 RUN echo "Building at ${BUILD_DATE}" > /tmp/build_timestamp
 
-# Clean all caches before build
-RUN rm -rf .next node_modules/.cache
+# Clean ALL caches before build (including Next.js cache)
+RUN rm -rf .next node_modules/.cache /tmp/*
 
+# Run build
 RUN npm run build
 
 # Production image, copy all the files and run next
