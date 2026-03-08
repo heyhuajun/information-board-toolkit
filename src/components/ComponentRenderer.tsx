@@ -5,6 +5,7 @@ import CardGrid from './CardGrid'
 import Table from './Table'
 import List from './List'
 import Metric from './Metric'
+import Chart from './Chart'
 import Markdown from './Markdown'
 import Image from './Image'
 import Alert from './Alert'
@@ -28,6 +29,8 @@ export default function ComponentRenderer({ component }: ComponentRendererProps)
       return <List {...component} />
     case 'metric':
       return <Metric {...component} />
+    case 'chart':
+      return <Chart {...component} />
     case 'markdown':
       return <Markdown {...component} />
     case 'image':

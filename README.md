@@ -193,7 +193,7 @@ Response:
 }
 ```
 
-## 🤖 Agent Toolkit (计划中)
+## 🤖 Agent Toolkit
 
 ```typescript
 import { Board } from '@openclaw/information-board-toolkit'
@@ -215,6 +215,8 @@ const result = await board.submit({
 
 console.log(result.shareUrl)
 ```
+
+查看 [toolkit/README.md](toolkit/README.md) 了解更多。
 
 ## 🐳 Docker 部署
 

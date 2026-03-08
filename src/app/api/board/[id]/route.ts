@@ -1,10 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { updateBoard, deleteBoard, getBoardById } from '@/lib/db'
+import { validateApiKey, unauthorizedResponse } from '@/lib/auth'
 
 export async function PUT(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
+  // 验证 API Key
+  if (!validateApiKey(request)) {
+    return unauthorizedResponse()
+  }
+
   try {
     const { id } = params
     const body = await request.json()
@@ -43,6 +49,11 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
+  // 验证 API Key
+  if (!validateApiKey(request)) {
+    return unauthorizedResponse()
+  }
+
   try {
     const { id } = params
 

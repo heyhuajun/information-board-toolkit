@@ -1,0 +1,109 @@
+import type { SubmitBoardRequest, SubmitBoardResponse, BoardData } from './types'
+
+export interface BoardConfig {
+  baseUrl: string
+  apiKey?: string
+  timeout?: number
+}
+
+export class Board {
+  private baseUrl: string
+  private apiKey?: string
+  private timeout: number
+
+  constructor(config: BoardConfig) {
+    this.baseUrl = config.baseUrl.replace(/\/$/, '')
+    this.apiKey = config.apiKey
+    this.timeout = config.timeout || 30000
+  }
+
+  private async request<T>(
+    path: string,
+    options: RequestInit = {}
+  ): Promise<T> {
+    const url = `${this.baseUrl}${path}`
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+      ...((options.headers as Record<string, string>) || {}),
+    }
+
+    if (this.apiKey) {
+      headers['X-API-Key'] = this.apiKey
+    }
+
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), this.timeout)
+
+    try {
+      const response = await fetch(url, {
+        ...options,
+        headers,
+        signal: controller.signal,
+      })
+
+      clearTimeout(timeoutId)
+
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({}))
+        throw new Error(error.error || `HTTP ${response.status}`)
+      }
+
+      return await response.json()
+    } catch (error) {
+      clearTimeout(timeoutId)
+      if (error instanceof Error && error.name === 'AbortError') {
+        throw new Error('Request timeout')
+      }
+      throw error
+    }
+  }
+
+  /**
+   * 提交内容到看板
+   */
+  async submit(data: SubmitBoardRequest): Promise<SubmitBoardResponse> {
+    return this.request<SubmitBoardResponse>('/api/board/submit', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    })
+  }
+
+  /**
+   * 更新内容
+   */
+  async update(
+    id: string,
+    data: Partial<SubmitBoardRequest>
+  ): Promise<BoardData> {
+    return this.request<BoardData>(`/api/board/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    })
+  }
+
+  /**
+   * 删除内容
+   */
+  async delete(id: string): Promise<{ success: boolean }> {
+    return this.request<{ success: boolean }>(`/api/board/${id}`, {
+      method: 'DELETE',
+    })
+  }
+
+  /**
+   * 列出内容
+   */
+  async list(options?: {
+    author?: string
+    limit?: number
+    offset?: number
+  }): Promise<{ items: any[]; total: number }> {
+    const params = new URLSearchParams()
+    if (options?.author) params.set('author', options.author)
+    if (options?.limit) params.set('limit', options.limit.toString())
+    if (options?.offset) params.set('offset', options.offset.toString())
+
+    const query = params.toString()
+    return this.request(`/api/board/list${query ? `?${query}` : ''}`)
+  }
+}

@@ -1,8 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createBoard } from '@/lib/db'
+import { validateApiKey, unauthorizedResponse } from '@/lib/auth'
 import type { SubmitBoardRequest, SubmitBoardResponse } from '@/types'
 
 export async function POST(request: NextRequest) {
+  // 验证 API Key
+  if (!validateApiKey(request)) {
+    return unauthorizedResponse()
+  }
+
   try {
     const body: SubmitBoardRequest = await request.json()
 
