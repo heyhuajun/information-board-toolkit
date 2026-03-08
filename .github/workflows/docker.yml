@@ -49,3 +49,5 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           no-cache: true
+          build-args: |
+            BUILD_DATE=${{ github.event.head_commit.timestamp }}
