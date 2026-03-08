@@ -4,7 +4,7 @@ import { validateApiKey, unauthorizedResponse } from '@/lib/auth'
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   // 验证 API Key
   if (!validateApiKey(request)) {
@@ -12,7 +12,7 @@ export async function PUT(
   }
 
   try {
-    const { id } = params
+    const { id } = await params
     const body = await request.json()
 
     // 检查 Board 是否存在
@@ -47,7 +47,7 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   // 验证 API Key
   if (!validateApiKey(request)) {
@@ -55,7 +55,7 @@ export async function DELETE(
   }
 
   try {
-    const { id } = params
+    const { id } = await params
 
     // 检查 Board 是否存在
     const board = getBoardById(id)
