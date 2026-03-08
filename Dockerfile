@@ -17,9 +17,10 @@ COPY . .
 # Add build timestamp to invalidate cache
 ARG BUILD_DATE
 ENV NEXT_TELEMETRY_DISABLED=1
+ENV BUILD_DATE=${BUILD_DATE}
 
-# Clean any existing build artifacts
-RUN rm -rf .next
+# Force cache invalidation by using BUILD_DATE
+RUN echo "Building at ${BUILD_DATE}" > /tmp/build_timestamp
 
 RUN npm run build
 
