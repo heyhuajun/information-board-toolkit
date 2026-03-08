@@ -26,8 +26,8 @@ ENV BUILD_DATE=${BUILD_DATE}
 # Force cache invalidation by using BUILD_DATE
 RUN echo "Building at ${BUILD_DATE}" > /tmp/build_timestamp
 
-# Clean ALL caches before build (including Next.js cache)
-RUN rm -rf .next node_modules/.cache /tmp/*
+# Clean ALL caches before build (including Next.js cache, Turbopack cache, npm cache)
+RUN rm -rf .next .turbo node_modules/.cache /tmp/* ~/.npm ~/.cache
 
 # Run build
 RUN npm run build

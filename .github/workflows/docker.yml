@@ -25,7 +25,10 @@ jobs:
         uses: docker/setup-buildx-action@v3
 
       - name: Clear Docker cache
-        run: docker builder prune -af
+        run: |
+          docker builder prune -af
+          docker system prune -af
+          rm -rf ~/.npm ~/.cache
 
       - name: Log in to Container Registry
         if: github.event_name != 'pull_request'
@@ -52,5 +55,7 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           no-cache: true
+          cache-from: ''
+          cache-to: ''
           build-args: |
             BUILD_DATE=${{ github.event.head_commit.timestamp }}
