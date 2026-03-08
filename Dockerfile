@@ -22,6 +22,9 @@ ENV BUILD_DATE=${BUILD_DATE}
 # Force cache invalidation by using BUILD_DATE
 RUN echo "Building at ${BUILD_DATE}" > /tmp/build_timestamp
 
+# Clean all caches before build
+RUN rm -rf .next node_modules/.cache
+
 RUN npm run build
 
 # Production image, copy all the files and run next
