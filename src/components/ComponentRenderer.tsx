@@ -10,11 +10,20 @@ import Markdown from './Markdown'
 import Image from './Image'
 import Alert from './Alert'
 import Divider from './Divider'
+// Phase 1 组件
 import DataSource from './DataSource'
 import CompareTable from './CompareTable'
 import DataBadge from './DataBadge'
 import Tag from './Tag'
 import Badge from './Badge'
+// Phase 2 组件
+import Quote from './Quote'
+import Timeline from './Timeline'
+import Progress from './Progress'
+import Collapse from './Collapse'
+import Comments from './Comments'
+import VersionHistory from './VersionHistory'
+import Template from './Template'
 
 interface ComponentRendererProps {
   component: Component
@@ -44,7 +53,7 @@ export default function ComponentRenderer({ component }: ComponentRendererProps)
       return <Alert {...component} />
     case 'divider':
       return <Divider />
-    // Phase 1 新组件
+    // Phase 1 组件
     case 'dataSource':
       return <DataSource {...component} />
     case 'compareTable':
@@ -55,6 +64,21 @@ export default function ComponentRenderer({ component }: ComponentRendererProps)
       return <Tag {...component} />
     case 'badge':
       return <Badge {...component} />
+    // Phase 2 组件
+    case 'quote':
+      return <Quote {...component} />
+    case 'timeline':
+      return <Timeline {...component} />
+    case 'progress':
+      return <Progress {...component} />
+    case 'collapse':
+      return <Collapse {...component} />
+    case 'comments':
+      return <Comments {...component} />
+    case 'versionHistory':
+      return <VersionHistory {...component} />
+    case 'template':
+      return <Template {...component} />
     default:
       return null
   }
