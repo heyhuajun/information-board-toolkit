@@ -17,7 +17,7 @@ export default function Home() {
             <div>
               <h3 className="font-semibold text-gray-900 mb-2">🎨 美观展示</h3>
               <p className="text-gray-600 text-sm">
-                11 种专业组件，自动适配移动端，让你的内容更有吸引力
+                23 种专业组件，自动适配移动端，让你的内容更有吸引力
               </p>
             </div>
             <div>
@@ -42,8 +42,10 @@ export default function Home() {
         </div>
 
         <div className="bg-white rounded-2xl shadow-xl p-8 mb-8">
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">🧩 组件库</h2>
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+          <h2 className="text-2xl font-bold text-gray-900 mb-4">🧩 组件库 (23)</h2>
+          
+          <h3 className="text-lg font-semibold text-gray-800 mb-3">基础组件 (11)</h3>
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-6">
             {[
               'Section', 'Card', 'CardGrid', 'Table', 
               'List', 'Metric', 'Chart', 'Markdown',
@@ -51,6 +53,30 @@ export default function Home() {
             ].map((component) => (
               <div key={component} className="bg-gray-50 rounded-lg p-3 text-center">
                 <span className="text-sm font-medium text-gray-700">{component}</span>
+              </div>
+            ))}
+          </div>
+
+          <h3 className="text-lg font-semibold text-gray-800 mb-3">Phase 1 组件 (5)</h3>
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-6">
+            {[
+              'DataSource', 'CompareTable', 'DataBadge', 
+              'Tag', 'Badge'
+            ].map((component) => (
+              <div key={component} className="bg-blue-50 rounded-lg p-3 text-center">
+                <span className="text-sm font-medium text-blue-700">{component}</span>
+              </div>
+            ))}
+          </div>
+
+          <h3 className="text-lg font-semibold text-gray-800 mb-3">Phase 2 组件 (7)</h3>
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+            {[
+              'Template', 'VersionHistory', 'Comments',
+              'Quote', 'Timeline', 'Progress', 'Collapse'
+            ].map((component) => (
+              <div key={component} className="bg-green-50 rounded-lg p-3 text-center">
+                <span className="text-sm font-medium text-green-700">{component}</span>
               </div>
             ))}
           </div>
