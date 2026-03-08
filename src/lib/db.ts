@@ -4,6 +4,33 @@ import path from 'path'
 import fs from 'fs'
 import type { BoardData, Component } from '@/types'
 
+// 数据库行类型定义
+interface BoardRow {
+  id: string
+  title: string
+  description: string | null
+  layout: string
+  meta: string | null
+  share_token: string
+  expires_at: string | null
+  views: number
+  created_at: string
+  updated_at: string
+  author: string | null
+}
+
+interface ViewLogRow {
+  id: number
+  board_id: string
+  viewed_at: string
+  ip: string | null
+  user_agent: string | null
+}
+
+interface CountRow {
+  count: number
+}
+
 // 数据库路径
 const DB_PATH = process.env.DATABASE_URL || path.join(process.cwd(), 'data', 'board.db')
 
@@ -98,7 +125,7 @@ export function createBoard(data: {
 // 根据 ID 获取 Board
 export function getBoardById(id: string): BoardData | null {
   const stmt = db.prepare('SELECT * FROM boards WHERE id = ?')
-  const row = stmt.get(id) as any
+  const row = stmt.get(id) as BoardRow | undefined
 
   if (!row) return null
 
@@ -119,7 +146,7 @@ export function getBoardById(id: string): BoardData | null {
 // 根据 share_token 获取 Board
 export function getBoardByToken(token: string): BoardData | null {
   const stmt = db.prepare('SELECT * FROM boards WHERE share_token = ?')
-  const row = stmt.get(token) as any
+  const row = stmt.get(token) as BoardRow | undefined
 
   if (!row) return null
 
@@ -156,7 +183,7 @@ export function updateBoard(
   }
 ): boolean {
   const updates: string[] = []
-  const values: any[] = []
+  const values: (string | number | null)[] = []
 
   if (data.title !== undefined) {
     updates.push('title = ?')
@@ -202,7 +229,7 @@ export function listBoards(options: {
   const { author, limit = 10, offset = 0 } = options
 
   let whereClause = ''
-  const params: any[] = []
+  const params: (string | number)[] = []
 
   if (author) {
     whereClause = 'WHERE author = ?'
@@ -211,7 +238,7 @@ export function listBoards(options: {
 
   // 获取总数
   const countStmt = db.prepare(`SELECT COUNT(*) as count FROM boards ${whereClause}`)
-  const countResult = countStmt.get(...params) as any
+  const countResult = countStmt.get(...params) as CountRow
   const total = countResult.count
 
   // 获取列表
@@ -255,7 +282,7 @@ export function getViewStats(id: string): {
     ORDER BY viewed_at DESC
     LIMIT 1
   `)
-  const lastView = lastViewStmt.get(id) as any
+  const lastView = lastViewStmt.get(id) as ViewLogRow | undefined
 
   return {
     views: board.views,
