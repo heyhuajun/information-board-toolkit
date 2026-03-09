@@ -1,4 +1,4 @@
-import type { SubmitBoardRequest, SubmitBoardResponse, BoardData } from './types';
+import type { SubmitBoardRequest, SubmitBoardResponse, BoardData, ListBoardsResponse } from './types';
 export interface BoardConfig {
     baseUrl: string;
     apiKey?: string;
@@ -35,8 +35,5 @@ export declare class Board {
         author?: string;
         limit?: number;
         offset?: number;
-    }): Promise<{
-        items: any[];
-        total: number;
-    }>;
+    }): Promise<ListBoardsResponse>;
 }

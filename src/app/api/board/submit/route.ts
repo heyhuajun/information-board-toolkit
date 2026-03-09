@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createBoard } from '@/lib/db'
 import { validateApiKey, unauthorizedResponse, errorResponse } from '@/lib/auth'
+import { strictRateLimit } from '@/lib/rateLimit'
 import type { SubmitBoardRequest, Component } from '@/types'
 
 // 输入验证常量
@@ -90,6 +91,12 @@ export async function POST(request: NextRequest) {
   // 验证 API Key
   if (!validateApiKey(request)) {
     return unauthorizedResponse()
+  }
+
+  // Rate limiting
+  const rateLimitResult = strictRateLimit(request, 'submit')
+  if (rateLimitResult instanceof NextResponse) {
+    return rateLimitResult
   }
 
   try {

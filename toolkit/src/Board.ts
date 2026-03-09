@@ -1,4 +1,4 @@
-import type { SubmitBoardRequest, SubmitBoardResponse, BoardData } from './types'
+import type { SubmitBoardRequest, SubmitBoardResponse, BoardData, ListBoardsResponse } from './types'
 
 export interface BoardConfig {
   baseUrl: string
@@ -129,7 +129,7 @@ export class Board {
     author?: string
     limit?: number
     offset?: number
-  }): Promise<{ items: any[]; total: number }> {
+  }): Promise<ListBoardsResponse> {
     const params = new URLSearchParams()
     if (options?.author) params.set('author', options.author)
     if (options?.limit) params.set('limit', options.limit.toString())

@@ -3,7 +3,7 @@ import { nanoid } from 'nanoid'
 import path from 'path'
 import fs from 'fs'
 import crypto from 'crypto'
-import type { BoardData, Component } from '@/types'
+import type { BoardData, Component, BoardListItem } from '@/types'
 
 // 数据库行类型定义
 interface BoardRow {
@@ -284,7 +284,7 @@ export function listBoards(options: {
   author?: string
   limit?: number
   offset?: number
-}): { items: any[]; total: number } {
+}): { items: BoardListItem[]; total: number } {
   const { author, limit = 10, offset = 0 } = options
 
   let whereClause = ''
@@ -308,7 +308,15 @@ export function listBoards(options: {
     ORDER BY created_at DESC
     LIMIT ? OFFSET ?
   `)
-  const items = listStmt.all(...params, limit, offset)
+  const rows = listStmt.all(...params, limit, offset) as Array<{ id: string; title: string; views: number; created_at: string }>
+
+  // 映射字段名：created_at -> createdAt
+  const items: BoardListItem[] = rows.map(row => ({
+    id: row.id,
+    title: row.title,
+    views: row.views,
+    createdAt: row.created_at,
+  }))
 
   return { items, total }
 }

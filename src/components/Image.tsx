@@ -1,4 +1,5 @@
 import type { ImageComponent } from '@/types'
+import Image from 'next/image'
 
 // 允许的 URL 协议
 const ALLOWED_PROTOCOLS = ['http:', 'https:', 'data:']
@@ -18,7 +19,7 @@ function isSafeUrl(url: string): boolean {
   }
 }
 
-export default function Image({ src, caption, width = 'full' }: ImageComponent) {
+export default function ImageComponent({ src, caption, width = 'full' }: ImageComponent) {
   const widthClass = {
     full: 'w-full',
     half: 'w-full md:w-1/2',
@@ -42,12 +43,14 @@ export default function Image({ src, caption, width = 'full' }: ImageComponent) 
 
   return (
     <div className={`${widthClass[width]} mx-auto`}>
-      <img 
+      <Image 
         src={src} 
         alt={caption || ''} 
+        width={800}
+        height={600}
         className="w-full rounded-lg shadow" 
         loading="lazy"
-        referrerPolicy="no-referrer"
+        unoptimized
       />
       {caption && (
         <p className="text-center text-sm text-gray-600 mt-2">{caption}</p>

@@ -61,13 +61,15 @@ export function validateApiKey(request: NextRequest): boolean {
     return timingSafeEqualString(apiKey, validApiKey)
   }
 
-  // 4. 开发环境默认允许无认证
+  // 4. 开发环境默认允许无认证（需显式警告）
   if (!validApiKey) {
+    console.warn('WARNING: Running without API_KEY - authentication disabled!')
+    console.warn('Set API_KEY environment variable to enable authentication.')
     return true
   }
 
   const apiKey = request.headers.get('X-API-Key')
-  if (!apiKey) return true // 开发环境无 API Key 时允许
+  if (!apiKey) return true
   return timingSafeEqualString(apiKey, validApiKey)
 }
 

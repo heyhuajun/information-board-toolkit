@@ -51,6 +51,7 @@ export default function ComponentRenderer({ component }: ComponentRendererProps)
     case 'markdown':
       return <Markdown {...component} />
     case 'image':
+      // eslint-disable-next-line jsx-a11y/alt-text -- Custom Image component handles alt internally
       return <Image {...component} />
     case 'alert':
       return <Alert {...component} />

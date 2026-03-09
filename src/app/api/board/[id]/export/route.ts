@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getBoardById } from '@/lib/db'
+import { getBoardById, verifyOwnerToken } from '@/lib/db'
 import { validateApiKey, unauthorizedResponse } from '@/lib/auth'
 
 export async function GET(
@@ -15,6 +15,17 @@ export async function GET(
     const { id } = await params
     const { searchParams } = new URL(request.url)
     const format = searchParams.get('format') || 'json'
+
+    // 获取 ownerToken（从请求头）
+    const ownerToken = request.headers.get('X-Owner-Token')
+
+    // 验证 ownership - 防止未授权导出
+    if (!ownerToken || !verifyOwnerToken(id, ownerToken)) {
+      return NextResponse.json(
+        { error: 'Forbidden. Invalid or missing X-Owner-Token header.' },
+        { status: 403 }
+      )
+    }
 
     // 获取 Board
     const board = getBoardById(id)

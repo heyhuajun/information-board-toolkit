@@ -1,40 +1,47 @@
-FROM node:20-alpine
+# Stage 1: Dependencies
+FROM node:20-alpine AS deps
 
-# Install dependencies
 RUN apk add --no-cache libc6-compat python3 make g++
 
 WORKDIR /app
 
-# Copy package files
 COPY package.json package-lock.json* ./
 
-# Install dependencies
+RUN npm ci --only=production && npm cache clean --force
+
+# Stage 2: Builder
+FROM node:20-alpine AS builder
+
+WORKDIR /app
+
+COPY package.json package-lock.json* ./
 RUN npm ci
 
-# Copy source code
 COPY . .
 
-# Add build timestamp to force rebuild
 ARG BUILD_DATE
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV BUILD_DATE=${BUILD_DATE}
 ENV NODE_ENV=production
 
-# Clean all caches
-RUN rm -rf .next .turbo node_modules/.cache /tmp/* ~/.npm ~/.cache
+RUN npm run build
 
-# Build
-RUN echo "Building at ${BUILD_DATE}" && npm run build
+# Stage 3: Runner
+FROM node:20-alpine AS runner
 
-# Create user
+WORKDIR /app
+
+ENV NODE_ENV=production
+ENV NEXT_TELEMETRY_DISABLED=1
+
 RUN addgroup --system --gid 1001 nodejs && \
     adduser --system --uid 1001 nextjs
 
-# Create data directory
-RUN mkdir -p /app/data && chown -R nextjs:nodejs /app
+COPY --from=builder /app/public ./public
+COPY --from=builder /app/.next/standalone ./
+COPY --from=builder /app/.next/static ./.next/static
 
-# Set permissions
-RUN chown -R nextjs:nodejs /app/.next
+RUN mkdir -p /app/data && chown -R nextjs:nodejs /app
 
 USER nextjs
 
@@ -43,4 +50,4 @@ EXPOSE 3000
 ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
 
-CMD ["npm", "start"]
+CMD ["node", "server.js"]

@@ -1,5 +1,6 @@
 import type { CommentsComponent } from '@/types'
 import { useState } from 'react'
+import Image from 'next/image'
 
 export default function Comments({
   comments,
@@ -69,10 +70,13 @@ export default function Comments({
           <div key={comment.id} className="group">
             <div className="flex gap-3">
               {comment.avatar ? (
-                <img
+                <Image
                   src={comment.avatar}
                   alt={comment.author}
+                  width={32}
+                  height={32}
                   className="w-8 h-8 rounded-full object-cover flex-shrink-0"
+                  unoptimized
                 />
               ) : (
                 <div className="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center text-gray-600 text-sm font-medium flex-shrink-0">
@@ -123,10 +127,13 @@ export default function Comments({
                     {comment.replies.map((reply) => (
                       <div key={reply.id} className="flex gap-2">
                         {reply.avatar ? (
-                          <img
+                          <Image
                             src={reply.avatar}
                             alt={reply.author}
+                            width={24}
+                            height={24}
                             className="w-6 h-6 rounded-full object-cover flex-shrink-0"
+                            unoptimized
                           />
                         ) : (
                           <div className="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center text-gray-600 text-xs font-medium flex-shrink-0">

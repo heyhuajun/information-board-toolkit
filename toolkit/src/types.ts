@@ -370,12 +370,14 @@ export interface ViewBoardResponse extends BoardData {
   }
 }
 
+export interface BoardListItem {
+  id: string
+  title: string
+  views: number
+  createdAt: string
+}
+
 export interface ListBoardsResponse {
-  items: {
-    id: string
-    title: string
-    views: number
-    createdAt: string
-  }[]
+  items: BoardListItem[]
   total: number
 }

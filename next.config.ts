@@ -1,7 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  // Removed standalone output to force fresh builds
+  output: 'standalone',
   
   // 安全头配置
   async headers() {

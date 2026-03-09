@@ -1,4 +1,5 @@
 import type { QuoteComponent } from '@/types'
+import Image from 'next/image'
 
 export default function Quote({
   content,
@@ -11,10 +12,13 @@ export default function Quote({
     <blockquote className="relative border-l-4 border-gray-300 bg-gray-50 p-4 my-4">
       <div className="flex items-start gap-3">
         {avatar && (
-          <img 
+          <Image 
             src={avatar} 
             alt={author}
+            width={40}
+            height={40}
             className="w-10 h-10 rounded-full object-cover flex-shrink-0"
+            unoptimized
           />
         )}
         <div className="flex-1">

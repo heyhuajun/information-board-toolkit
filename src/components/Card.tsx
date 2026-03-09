@@ -1,4 +1,5 @@
 import type { CardComponent } from '@/types'
+import Image from 'next/image'
 
 export default function Card({ title, value, change, changeType, image, footer }: Omit<CardComponent, 'type'>) {
   const changeColor = changeType === 'positive' 
@@ -10,7 +11,14 @@ export default function Card({ title, value, change, changeType, image, footer }
   return (
     <div className="bg-white rounded-lg shadow p-6">
       {image && (
-        <img src={image} alt={title} className="w-full h-48 object-cover rounded-lg mb-4" />
+        <Image 
+          src={image} 
+          alt={title} 
+          width={400}
+          height={192}
+          className="w-full h-48 object-cover rounded-lg mb-4"
+          unoptimized
+        />
       )}
       <h3 className="text-gray-500 text-sm mb-2">{title}</h3>
       <div className="flex items-baseline gap-2">

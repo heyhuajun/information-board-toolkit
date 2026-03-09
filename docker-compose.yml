@@ -1,19 +1,49 @@
-version: '3.8'
+# Information Board Toolkit - Docker Compose Configuration
+# 遵循 /volume1/docker/deployment-standards/ 规范
 
 services:
   information-board:
-    build: .
+    image: ghcr.io/heyhuajun/information-board-toolkit:latest
     container_name: information-board
     restart: unless-stopped
-    ports:
-      - "3030:3000"
+    
+    user: "1001:1001"
+    
+    environment:
+      TZ: Asia/Shanghai
+      NODE_ENV: production
+      DATABASE_URL: /app/data/board.db
+      NEXT_PUBLIC_BASE_URL: http://192.168.88.247:3030
+      API_KEY: ${API_KEY:-}
+    
     volumes:
       - ./data:/app/data
-    environment:
-      - DATABASE_URL=/app/data/board.db
-      - NEXT_PUBLIC_BASE_URL=http://localhost:3030
+    
+    ports:
+      - "3030:3000"
+    
     networks:
       - services
+    
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O- http://0.0.0.0:3000/api/health || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    
+    labels:
+      org.opencontainers.image.title: "Information Board Toolkit"
+      org.opencontainers.image.description: "Agent 信息看板工具包 - 美观展示、对外分享"
+      org.opencontainers.image.vendor: "OpenClaw"
+      org.opencontainers.image.version: "0.2.0"
+      org.opencontainers.image.source: "https://github.com/heyhuajun/information-board-toolkit"
+    
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
 
 networks:
   services:

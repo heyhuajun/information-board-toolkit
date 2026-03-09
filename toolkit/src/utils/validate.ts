@@ -3,7 +3,22 @@
  * 帮助 Agent 在提交前检查数据格式是否正确
  */
 
-import { Component } from '../types'
+import {
+  Component,
+  CardComponent,
+  ContentCardComponent,
+  CardGridComponent,
+  TableComponent,
+  ChartComponent,
+  CompareTableComponent,
+  SectionComponent,
+  DataSourceComponent,
+  TimelineComponent,
+  TimelineItem,
+  ProgressComponent,
+  CollapseComponent,
+  QuoteComponent
+} from '../types'
 
 export interface ValidationError {
   path: string
@@ -47,7 +62,7 @@ export function validateLayout(layout: Component): ValidationResult {
     }
 
     // 2. 检查组件类型是否有效
-    if (!VALID_TYPES.includes(component.type as any)) {
+    if (!VALID_TYPES.includes(component.type as typeof VALID_TYPES[number])) {
       errors.push({
         path,
         message: `Invalid component type: ${component.type}. Valid types: ${VALID_TYPES.join(', ')}`,
@@ -97,7 +112,7 @@ export function validateLayout(layout: Component): ValidationResult {
     }
   }
 
-  function validateCard(component: any, path: string) {
+  function validateCard(component: CardComponent, path: string) {
     if (!component.title && !component.value) {
       warnings.push({
         path,
@@ -115,7 +130,7 @@ export function validateLayout(layout: Component): ValidationResult {
     }
   }
 
-  function validateContentCard(component: any, path: string) {
+  function validateContentCard(component: ContentCardComponent, path: string) {
     if (!component.title) {
       errors.push({
         path: `${path}.title`,
@@ -132,7 +147,7 @@ export function validateLayout(layout: Component): ValidationResult {
     }
   }
 
-  function validateCardGrid(component: any, path: string) {
+  function validateCardGrid(component: CardGridComponent, path: string) {
     if (!component.cards || !Array.isArray(component.cards)) {
       errors.push({
         path: `${path}.cards`,
@@ -158,12 +173,12 @@ export function validateLayout(layout: Component): ValidationResult {
       })
     }
 
-    component.cards.forEach((card: any, index: number) => {
-      validateCard(card, `${path}.cards[${index}]`)
+    component.cards.forEach((card, index: number) => {
+      validateCard({ type: 'card', ...card }, `${path}.cards[${index}]`)
     })
   }
 
-  function validateTable(component: any, path: string) {
+  function validateTable(component: TableComponent, path: string) {
     if (!component.headers || !Array.isArray(component.headers)) {
       errors.push({
         path: `${path}.headers`,
@@ -183,7 +198,7 @@ export function validateLayout(layout: Component): ValidationResult {
 
     if (component.headers && component.rows.length > 0) {
       const headerCount = component.headers.length
-      component.rows.forEach((row: any[], rowIndex: number) => {
+      component.rows.forEach((row, rowIndex: number) => {
         if (row.length !== headerCount) {
           warnings.push({
             path: `${path}.rows[${rowIndex}]`,
@@ -195,7 +210,7 @@ export function validateLayout(layout: Component): ValidationResult {
     }
   }
 
-  function validateChart(component: any, path: string) {
+  function validateChart(component: ChartComponent, path: string) {
     if (!component.chartType) {
       errors.push({
         path: `${path}.chartType`,
@@ -239,7 +254,7 @@ export function validateLayout(layout: Component): ValidationResult {
     }
   }
 
-  function validateCompareTable(component: any, path: string) {
+  function validateCompareTable(component: CompareTableComponent, path: string) {
     if (!component.columns || !Array.isArray(component.columns)) {
       errors.push({
         path: `${path}.columns`,
@@ -265,7 +280,7 @@ export function validateLayout(layout: Component): ValidationResult {
     }
   }
 
-  function validateSection(component: any, path: string) {
+  function validateSection(component: SectionComponent, path: string) {
     if (!component.children || !Array.isArray(component.children)) {
       errors.push({
         path: `${path}.children`,
@@ -288,7 +303,7 @@ export function validateLayout(layout: Component): ValidationResult {
     })
   }
 
-  function validateDataSource(component: any, path: string) {
+  function validateDataSource(component: DataSourceComponent, path: string) {
     if (!component.source) {
       errors.push({
         path: `${path}.source`,
@@ -312,7 +327,7 @@ export function validateLayout(layout: Component): ValidationResult {
     }
   }
 
-  function validateTimeline(component: any, path: string) {
+  function validateTimeline(component: TimelineComponent, path: string) {
     if (!component.items || !Array.isArray(component.items)) {
       errors.push({
         path: `${path}.items`,
@@ -330,7 +345,7 @@ export function validateLayout(layout: Component): ValidationResult {
       })
     }
 
-    component.items.forEach((item: any, index: number) => {
+    component.items.forEach((item: TimelineItem, index: number) => {
       if (!item.title) {
         errors.push({
           path: `${path}.items[${index}].title`,
@@ -341,7 +356,7 @@ export function validateLayout(layout: Component): ValidationResult {
     })
   }
 
-  function validateProgress(component: any, path: string) {
+  function validateProgress(component: ProgressComponent, path: string) {
     if (component.percent === undefined) {
       errors.push({
         path: `${path}.percent`,
@@ -357,7 +372,7 @@ export function validateLayout(layout: Component): ValidationResult {
     }
   }
 
-  function validateCollapse(component: any, path: string) {
+  function validateCollapse(component: CollapseComponent, path: string) {
     if (!component.title) {
       errors.push({
         path: `${path}.title`,
@@ -367,7 +382,7 @@ export function validateLayout(layout: Component): ValidationResult {
     }
   }
 
-  function validateQuote(component: any, path: string) {
+  function validateQuote(component: QuoteComponent, path: string) {
     if (!component.content) {
       errors.push({
         path: `${path}.content`,

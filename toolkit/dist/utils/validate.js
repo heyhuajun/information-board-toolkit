@@ -137,7 +137,7 @@ function validateLayout(layout) {
             });
         }
         component.cards.forEach((card, index) => {
-            validateCard(card, `${path}.cards[${index}]`);
+            validateCard({ type: 'card', ...card }, `${path}.cards[${index}]`);
         });
     }
     function validateTable(component, path) {

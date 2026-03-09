@@ -12,7 +12,18 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Custom ignores:
+    "toolkit/dist/**",
   ]),
+  {
+    rules: {
+      // Allow custom Image component (has proper alt handling)
+      "jsx-a11y/alt-text": ["warn", {
+        elements: ["img"],
+        img: ["Image"],
+      }],
+    },
+  },
 ]);
 
 export default eslintConfig;
