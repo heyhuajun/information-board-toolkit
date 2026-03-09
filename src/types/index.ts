@@ -3,6 +3,7 @@
 export type ComponentType =
   | 'section'
   | 'card'
+  | 'content-card'    // 内容卡片
   | 'card-grid'
   | 'table'
   | 'list'
@@ -56,6 +57,15 @@ export interface CardComponent extends BaseComponent {
   changeType?: ChangeType
   image?: string
   footer?: string
+}
+
+// ContentCard 组件 - 多行内容卡片
+export interface ContentCardComponent extends BaseComponent {
+  type: 'content-card'
+  title: string
+  content: string
+  icon?: string
+  accent?: boolean
 }
 
 // CardGrid 组件
@@ -294,6 +304,7 @@ export interface TemplateComponent extends BaseComponent {
 export type Component =
   | SectionComponent
   | CardComponent
+  | ContentCardComponent
   | CardGridComponent
   | TableComponent
   | ListComponent

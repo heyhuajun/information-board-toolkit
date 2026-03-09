@@ -1,6 +1,7 @@
 import type { Component } from '@/types'
 import Section from './Section'
 import Card from './Card'
+import ContentCard from './ContentCard'
 import CardGrid from './CardGrid'
 import Table from './Table'
 import List from './List'
@@ -35,6 +36,8 @@ export default function ComponentRenderer({ component }: ComponentRendererProps)
       return <Section {...component} />
     case 'card':
       return <Card {...component} />
+    case 'content-card':
+      return <ContentCard {...component} />
     case 'card-grid':
       return <CardGrid {...component} />
     case 'table':
