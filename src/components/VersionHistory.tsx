@@ -1,4 +1,4 @@
-import type { VersionHistoryComponent, Version } from '@/types'
+import type { VersionHistoryComponent } from '@/types'
 import { useState } from 'react'
 
 export default function VersionHistory({

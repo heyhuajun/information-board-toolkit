@@ -1,4 +1,4 @@
-import type { CommentsComponent, Comment } from '@/types'
+import type { CommentsComponent } from '@/types'
 import { useState } from 'react'
 
 export default function Comments({

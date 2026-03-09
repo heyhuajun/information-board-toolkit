@@ -1,4 +1,4 @@
-import type { CollapseComponent, Component } from '@/types'
+import type { CollapseComponent } from '@/types'
 import ComponentRenderer from './ComponentRenderer'
 import { useState } from 'react'
 

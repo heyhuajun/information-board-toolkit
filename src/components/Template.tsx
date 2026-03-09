@@ -63,7 +63,7 @@ export default function Template({
   if (!template && !name) {
     return (
       <div className="p-4 bg-red-50 text-red-600 rounded-lg">
-        模板 "{templateId}" 不存在
+        模板 &quot;{templateId}&quot; 不存在
       </div>
     )
   }

@@ -20,7 +20,9 @@ export default function CompareTable({
   }
 
   // 获取差异高亮样式
-  const getDiffStyle = (row: typeof rows[0], column: 'A' | 'B') => {
+  const getDiffStyle = (row: typeof rows[0], _column: 'A' | 'B') => {
+    // _column 参数为未来扩展预留，目前未使用
+    void _column
     if (!highlightDiff) return ''
     if (!isDifferent(row)) return 'bg-gray-50 text-gray-500'
     return ''

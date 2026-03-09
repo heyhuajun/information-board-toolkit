@@ -1,4 +1,4 @@
-import type { TimelineComponent, TimelineItem } from '@/types'
+import type { TimelineComponent } from '@/types'
 
 export default function Timeline({
   items,

@@ -74,7 +74,10 @@ db.exec(`
   CREATE INDEX IF NOT EXISTS idx_boards_share_token ON boards(share_token);
   CREATE INDEX IF NOT EXISTS idx_boards_owner_token ON boards(owner_token);
   CREATE INDEX IF NOT EXISTS idx_boards_author ON boards(author);
+  CREATE INDEX IF NOT EXISTS idx_boards_created_at ON boards(created_at);
+  CREATE INDEX IF NOT EXISTS idx_boards_expires_at ON boards(expires_at);
   CREATE INDEX IF NOT EXISTS idx_view_logs_board_id ON view_logs(board_id);
+  CREATE INDEX IF NOT EXISTS idx_view_logs_viewed_at ON view_logs(viewed_at);
 `)
 
 // 迁移：为已存在的表添加 owner_token 列（如果不存在）
@@ -90,9 +93,9 @@ try {
       updateStmt.run(nanoid(16), board.id)
     }
   }
-} catch (e) {
-  // 忽略迁移错误（可能是新数据库）
-}
+  } catch (e) {
+    console.warn('Database migration warning (may be expected for new databases):', e)
+  }
 
 // 计算过期时间
 function calculateExpiresAt(expiresIn: string): string | null {
@@ -312,16 +315,21 @@ export function listBoards(options: {
 
 // 增加浏览量
 export function incrementViews(id: string, ip?: string, userAgent?: string): void {
-  // 更新浏览量
-  const updateStmt = db.prepare('UPDATE boards SET views = views + 1 WHERE id = ?')
-  updateStmt.run(id)
+  try {
+    // 更新浏览量
+    const updateStmt = db.prepare('UPDATE boards SET views = views + 1 WHERE id = ?')
+    updateStmt.run(id)
 
-  // 记录浏览日志
-  const logStmt = db.prepare(`
-    INSERT INTO view_logs (board_id, ip, user_agent)
-    VALUES (?, ?, ?)
-  `)
-  logStmt.run(id, ip || null, userAgent || null)
+    // 记录浏览日志
+    const logStmt = db.prepare(`
+      INSERT INTO view_logs (board_id, ip, user_agent, viewed_at)
+      VALUES (?, ?, ?, datetime('now'))
+    `)
+    logStmt.run(id, ip || null, userAgent || null)
+  } catch (error) {
+    console.error('Failed to increment views:', error)
+    // 不抛出错误，避免影响主请求流程
+  }
 }
 
 // 获取浏览统计
