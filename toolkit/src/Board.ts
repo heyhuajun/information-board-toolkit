@@ -44,15 +44,35 @@ export class Board {
       clearTimeout(timeoutId)
 
       if (!response.ok) {
-        const error = await response.json().catch(() => ({}))
-        throw new Error(error.error || `HTTP ${response.status}`)
+        const errorData = await response.json().catch(() => ({}))
+        
+        // 构建详细错误信息
+        let errorMessage = errorData.error || `HTTP ${response.status}`
+        
+        if (errorData.details) {
+          errorMessage += `\n详情: ${errorData.details}`
+        }
+        
+        if (errorData.hint) {
+          errorMessage += `\n提示: ${errorData.hint}`
+        }
+        
+        if (errorData.example) {
+          errorMessage += `\n示例: ${JSON.stringify(errorData.example, null, 2)}`
+        }
+        
+        if (errorData.received) {
+          errorMessage += `\n收到的值: ${errorData.received}`
+        }
+        
+        throw new Error(errorMessage)
       }
 
       return await response.json()
     } catch (error) {
       clearTimeout(timeoutId)
       if (error instanceof Error && error.name === 'AbortError') {
-        throw new Error('Request timeout')
+        throw new Error(`请求超时 (${this.timeout}ms)`)
       }
       throw error
     }
