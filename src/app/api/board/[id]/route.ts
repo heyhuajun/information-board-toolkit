@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { updateBoard, deleteBoard, getBoardById } from '@/lib/db'
+import { updateBoard, deleteBoard, getBoardById, verifyOwnerToken } from '@/lib/db'
 import { validateApiKey, unauthorizedResponse } from '@/lib/auth'
 
 export async function PUT(
@@ -13,6 +13,18 @@ export async function PUT(
 
   try {
     const { id } = await params
+    
+    // 获取 ownerToken（从请求头或请求体）
+    const ownerToken = request.headers.get('X-Owner-Token')
+    
+    // 验证 ownership
+    if (!ownerToken || !verifyOwnerToken(id, ownerToken)) {
+      return NextResponse.json(
+        { error: 'Forbidden. Invalid or missing X-Owner-Token header.' },
+        { status: 403 }
+      )
+    }
+
     const body = await request.json()
 
     // 检查 Board 是否存在
@@ -56,6 +68,17 @@ export async function DELETE(
 
   try {
     const { id } = await params
+    
+    // 获取 ownerToken（从请求头）
+    const ownerToken = request.headers.get('X-Owner-Token')
+    
+    // 验证 ownership
+    if (!ownerToken || !verifyOwnerToken(id, ownerToken)) {
+      return NextResponse.json(
+        { error: 'Forbidden. Invalid or missing X-Owner-Token header.' },
+        { status: 403 }
+      )
+    }
 
     // 检查 Board 是否存在
     const board = getBoardById(id)

@@ -17,6 +17,17 @@ export interface ValidationResult {
   warnings: ValidationError[]
 }
 
+// 所有有效的组件类型（与 types.ts ComponentType 保持同步）
+const VALID_TYPES = [
+  // 基础组件
+  'section', 'card', 'content-card', 'card-grid', 'table', 'chart', 'list',
+  'metric', 'markdown', 'image', 'alert', 'divider',
+  // Phase 1 组件
+  'dataSource', 'compareTable', 'dataBadge', 'tag', 'badge',
+  // Phase 2 组件
+  'quote', 'timeline', 'progress', 'collapse', 'comments', 'versionHistory', 'template'
+] as const
+
 /**
  * 验证布局数据
  */
@@ -36,16 +47,10 @@ export function validateLayout(layout: Component): ValidationResult {
     }
 
     // 2. 检查组件类型是否有效
-    const validTypes = [
-      'section', 'card', 'card-grid', 'table', 'chart', 'list',
-      'quote', 'timeline', 'alert', 'markdown', 'divider',
-      'compareTable', 'dataSource', 'dataBadge', 'contentCard'
-    ]
-    
-    if (!validTypes.includes(component.type)) {
+    if (!VALID_TYPES.includes(component.type as any)) {
       errors.push({
         path,
-        message: `Invalid component type: ${component.type}`,
+        message: `Invalid component type: ${component.type}. Valid types: ${VALID_TYPES.join(', ')}`,
         severity: 'error'
       })
       return
@@ -55,6 +60,9 @@ export function validateLayout(layout: Component): ValidationResult {
     switch (component.type) {
       case 'card':
         validateCard(component, path)
+        break
+      case 'content-card':
+        validateContentCard(component, path)
         break
       case 'card-grid':
         validateCardGrid(component, path)
@@ -70,6 +78,21 @@ export function validateLayout(layout: Component): ValidationResult {
         break
       case 'section':
         validateSection(component, path)
+        break
+      case 'dataSource':
+        validateDataSource(component, path)
+        break
+      case 'timeline':
+        validateTimeline(component, path)
+        break
+      case 'progress':
+        validateProgress(component, path)
+        break
+      case 'collapse':
+        validateCollapse(component, path)
+        break
+      case 'quote':
+        validateQuote(component, path)
         break
     }
   }
@@ -92,6 +115,23 @@ export function validateLayout(layout: Component): ValidationResult {
     }
   }
 
+  function validateContentCard(component: any, path: string) {
+    if (!component.title) {
+      errors.push({
+        path: `${path}.title`,
+        message: 'ContentCard requires title',
+        severity: 'error'
+      })
+    }
+    if (!component.content) {
+      warnings.push({
+        path: `${path}.content`,
+        message: 'ContentCard should have content',
+        severity: 'warning'
+      })
+    }
+  }
+
   function validateCardGrid(component: any, path: string) {
     if (!component.cards || !Array.isArray(component.cards)) {
       errors.push({
@@ -107,6 +147,14 @@ export function validateLayout(layout: Component): ValidationResult {
         path: `${path}.cards`,
         message: 'CardGrid has no cards',
         severity: 'warning'
+      })
+    }
+
+    if (component.columns && ![1, 2, 3, 4].includes(component.columns)) {
+      errors.push({
+        path: `${path}.columns`,
+        message: 'CardGrid columns must be 1, 2, 3, or 4',
+        severity: 'error'
       })
     }
 
@@ -207,6 +255,14 @@ export function validateLayout(layout: Component): ValidationResult {
         severity: 'error'
       })
     }
+
+    if (component.recommend && !['A', 'B'].includes(component.recommend)) {
+      errors.push({
+        path: `${path}.recommend`,
+        message: 'CompareTable recommend must be "A" or "B"',
+        severity: 'error'
+      })
+    }
   }
 
   function validateSection(component: any, path: string) {
@@ -230,6 +286,102 @@ export function validateLayout(layout: Component): ValidationResult {
     component.children.forEach((child: Component, index: number) => {
       validate(child, `${path}.children[${index}]`)
     })
+  }
+
+  function validateDataSource(component: any, path: string) {
+    if (!component.source) {
+      errors.push({
+        path: `${path}.source`,
+        message: 'DataSource requires source',
+        severity: 'error'
+      })
+    }
+    if (!component.timestamp) {
+      errors.push({
+        path: `${path}.timestamp`,
+        message: 'DataSource requires timestamp',
+        severity: 'error'
+      })
+    }
+    if (component.confidence !== undefined && (component.confidence < 0 || component.confidence > 100)) {
+      warnings.push({
+        path: `${path}.confidence`,
+        message: 'DataSource confidence should be between 0 and 100',
+        severity: 'warning'
+      })
+    }
+  }
+
+  function validateTimeline(component: any, path: string) {
+    if (!component.items || !Array.isArray(component.items)) {
+      errors.push({
+        path: `${path}.items`,
+        message: 'Timeline requires items array',
+        severity: 'error'
+      })
+      return
+    }
+
+    if (component.items.length === 0) {
+      warnings.push({
+        path: `${path}.items`,
+        message: 'Timeline has no items',
+        severity: 'warning'
+      })
+    }
+
+    component.items.forEach((item: any, index: number) => {
+      if (!item.title) {
+        errors.push({
+          path: `${path}.items[${index}].title`,
+          message: 'Timeline item requires title',
+          severity: 'error'
+        })
+      }
+    })
+  }
+
+  function validateProgress(component: any, path: string) {
+    if (component.percent === undefined) {
+      errors.push({
+        path: `${path}.percent`,
+        message: 'Progress requires percent',
+        severity: 'error'
+      })
+    } else if (component.percent < 0 || component.percent > 100) {
+      warnings.push({
+        path: `${path}.percent`,
+        message: 'Progress percent should be between 0 and 100',
+        severity: 'warning'
+      })
+    }
+  }
+
+  function validateCollapse(component: any, path: string) {
+    if (!component.title) {
+      errors.push({
+        path: `${path}.title`,
+        message: 'Collapse requires title',
+        severity: 'error'
+      })
+    }
+  }
+
+  function validateQuote(component: any, path: string) {
+    if (!component.content) {
+      errors.push({
+        path: `${path}.content`,
+        message: 'Quote requires content',
+        severity: 'error'
+      })
+    }
+    if (!component.author) {
+      errors.push({
+        path: `${path}.author`,
+        message: 'Quote requires author',
+        severity: 'error'
+      })
+    }
   }
 
   // 开始验证

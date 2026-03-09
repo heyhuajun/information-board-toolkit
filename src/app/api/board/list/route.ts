@@ -1,8 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { listBoards } from '@/lib/db'
+import { validateApiKey, unauthorizedResponse } from '@/lib/auth'
 import type { ListBoardsResponse } from '@/types'
 
 export async function GET(request: NextRequest) {
+  // 验证 API Key
+  if (!validateApiKey(request)) {
+    return unauthorizedResponse()
+  }
+
   try {
     const { searchParams } = new URL(request.url)
     const author = searchParams.get('author') || undefined

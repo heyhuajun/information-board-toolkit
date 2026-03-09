@@ -6,6 +6,10 @@ export interface BoardConfig {
   timeout?: number
 }
 
+export interface SubmitResult extends SubmitBoardResponse {
+  ownerToken: string
+}
+
 export class Board {
   private baseUrl: string
   private apiKey?: string
@@ -80,33 +84,41 @@ export class Board {
 
   /**
    * 提交内容到看板
+   * 返回包含 ownerToken 的结果，用于后续更新/删除操作
    */
-  async submit(data: SubmitBoardRequest): Promise<SubmitBoardResponse> {
-    return this.request<SubmitBoardResponse>('/api/board/submit', {
+  async submit(data: SubmitBoardRequest): Promise<SubmitResult> {
+    return this.request<SubmitResult>('/api/board/submit', {
       method: 'POST',
       body: JSON.stringify(data),
     })
   }
 
   /**
-   * 更新内容
+   * 更新内容（需要 ownerToken）
    */
   async update(
     id: string,
+    ownerToken: string,
     data: Partial<SubmitBoardRequest>
   ): Promise<BoardData> {
     return this.request<BoardData>(`/api/board/${id}`, {
       method: 'PUT',
+      headers: {
+        'X-Owner-Token': ownerToken,
+      },
       body: JSON.stringify(data),
     })
   }
 
   /**
-   * 删除内容
+   * 删除内容（需要 ownerToken）
    */
-  async delete(id: string): Promise<{ success: boolean }> {
+  async delete(id: string, ownerToken: string): Promise<{ success: boolean }> {
     return this.request<{ success: boolean }>(`/api/board/${id}`, {
       method: 'DELETE',
+      headers: {
+        'X-Owner-Token': ownerToken,
+      },
     })
   }
 

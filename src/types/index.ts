@@ -28,7 +28,7 @@ export type ComponentType =
 
 export type ChangeType = 'positive' | 'negative' | 'neutral'
 export type AlertType = 'info' | 'success' | 'warning' | 'error'
-export type ChartType = 'line' | 'bar' | 'pie' | 'doughnut'
+export type ChartType = 'line' | 'bar' | 'pie' | 'doughnut' | 'radar'
 export type TagColor = 'default' | 'primary' | 'success' | 'warning' | 'danger'
 export type Size = 'sm' | 'md' | 'lg'
 export type ProgressStatus = 'success' | 'warning' | 'error'

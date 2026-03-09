@@ -1,10 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getBoardById } from '@/lib/db'
+import { validateApiKey, unauthorizedResponse } from '@/lib/auth'
 
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  // 验证 API Key
+  if (!validateApiKey(request)) {
+    return unauthorizedResponse()
+  }
+
   try {
     const { id } = await params
     const { searchParams } = new URL(request.url)

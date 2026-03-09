@@ -2,6 +2,7 @@ import Database from 'better-sqlite3'
 import { nanoid } from 'nanoid'
 import path from 'path'
 import fs from 'fs'
+import crypto from 'crypto'
 import type { BoardData, Component } from '@/types'
 
 // 数据库行类型定义
@@ -12,6 +13,7 @@ interface BoardRow {
   layout: string
   meta: string | null
   share_token: string
+  owner_token: string
   expires_at: string | null
   views: number
   created_at: string
@@ -43,7 +45,7 @@ if (!fs.existsSync(dbDir)) {
 // 初始化数据库
 const db = new Database(DB_PATH)
 
-// 创建表
+// 创建表（添加 owner_token 字段）
 db.exec(`
   CREATE TABLE IF NOT EXISTS boards (
     id TEXT PRIMARY KEY,
@@ -52,6 +54,7 @@ db.exec(`
     layout TEXT NOT NULL,
     meta TEXT,
     share_token TEXT UNIQUE NOT NULL,
+    owner_token TEXT NOT NULL,
     expires_at TEXT,
     views INTEGER DEFAULT 0,
     created_at TEXT DEFAULT (datetime('now')),
@@ -69,9 +72,27 @@ db.exec(`
   );
 
   CREATE INDEX IF NOT EXISTS idx_boards_share_token ON boards(share_token);
+  CREATE INDEX IF NOT EXISTS idx_boards_owner_token ON boards(owner_token);
   CREATE INDEX IF NOT EXISTS idx_boards_author ON boards(author);
   CREATE INDEX IF NOT EXISTS idx_view_logs_board_id ON view_logs(board_id);
 `)
+
+// 迁移：为已存在的表添加 owner_token 列（如果不存在）
+try {
+  const tableInfo = db.prepare('PRAGMA table_info(boards)').all() as { name: string }[]
+  const hasOwnerToken = tableInfo.some(col => col.name === 'owner_token')
+  if (!hasOwnerToken) {
+    db.exec('ALTER TABLE boards ADD COLUMN owner_token TEXT')
+    // 为现有记录生成 owner_token
+    const existingBoards = db.prepare('SELECT id FROM boards WHERE owner_token IS NULL').all() as { id: string }[]
+    const updateStmt = db.prepare('UPDATE boards SET owner_token = ? WHERE id = ?')
+    for (const board of existingBoards) {
+      updateStmt.run(nanoid(16), board.id)
+    }
+  }
+} catch (e) {
+  // 忽略迁移错误（可能是新数据库）
+}
 
 // 计算过期时间
 function calculateExpiresAt(expiresIn: string): string | null {
@@ -91,21 +112,22 @@ function calculateExpiresAt(expiresIn: string): string | null {
   }
 }
 
-// 创建 Board
+// 创建 Board（返回包含 ownerToken）
 export function createBoard(data: {
   title: string
   description?: string
   layout: Component
   expiresIn?: string
   meta?: { author?: string; tags?: string[] }
-}): BoardData {
+}): BoardData & { ownerToken: string } {
   const id = nanoid()
   const shareToken = nanoid(16)
+  const ownerToken = nanoid(16)
   const expiresAt = data.expiresIn ? calculateExpiresAt(data.expiresIn) : null
 
   const stmt = db.prepare(`
-    INSERT INTO boards (id, title, description, layout, meta, share_token, expires_at, author)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    INSERT INTO boards (id, title, description, layout, meta, share_token, owner_token, expires_at, author)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
   `)
 
   stmt.run(
@@ -115,11 +137,13 @@ export function createBoard(data: {
     JSON.stringify(data.layout),
     data.meta ? JSON.stringify(data.meta) : null,
     shareToken,
+    ownerToken,
     expiresAt,
     data.meta?.author || null
   )
 
-  return getBoardById(id)!
+  const board = getBoardById(id)!
+  return { ...board, ownerToken }
 }
 
 // 根据 ID 获取 Board
@@ -170,6 +194,38 @@ export function getBoardByToken(token: string): BoardData | null {
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   }
+}
+
+// 时序安全比较函数
+function timingSafeEqualString(a: string, b: string): boolean {
+  // 将字符串转换为固定长度的 buffer
+  const bufA = Buffer.from(a, 'utf8')
+  const bufB = Buffer.from(b, 'utf8')
+  
+  // 如果长度不同，用 dummy 比较来保持恒定时间
+  if (bufA.length !== bufB.length) {
+    // 仍然执行比较以保持恒定时间
+    crypto.timingSafeEqual(bufA, bufA)
+    return false
+  }
+  
+  return crypto.timingSafeEqual(bufA, bufB)
+}
+
+// 验证 owner_token（时序安全）
+export function verifyOwnerToken(id: string, ownerToken: string): boolean {
+  if (!ownerToken || typeof ownerToken !== 'string') {
+    return false
+  }
+  
+  const stmt = db.prepare('SELECT owner_token FROM boards WHERE id = ?')
+  const row = stmt.get(id) as { owner_token: string } | undefined
+  
+  if (!row?.owner_token) {
+    return false
+  }
+  
+  return timingSafeEqualString(row.owner_token, ownerToken)
 }
 
 // 更新 Board
