@@ -20,15 +20,14 @@ export async function GET(
     const ownerToken = request.headers.get('X-Owner-Token')
 
     // 验证 ownership - 防止未授权导出
-    if (!ownerToken || !verifyOwnerToken(id, ownerToken)) {
+    if (!ownerToken || !(await verifyOwnerToken(id, ownerToken))) {
       return NextResponse.json(
         { error: 'Forbidden. Invalid or missing X-Owner-Token header.' },
         { status: 403 }
       )
     }
 
-    // 获取 Board
-    const board = getBoardById(id)
+    const board = await getBoardById(id)
     if (!board) {
       return NextResponse.json(
         { error: 'Board not found' },

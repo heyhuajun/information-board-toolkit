@@ -5,6 +5,7 @@ const envSchema = z.object({
   NEXT_PUBLIC_BASE_URL: z.string().url(),
   DATABASE_URL: z.string().startsWith('postgresql://'),
   API_KEY: z.string().min(32).optional(),
+  ADMIN_PASSWORD: z.string().optional(),
   REQUIRE_AUTH: z.enum(['true', 'false']).optional(),
 })
 
@@ -28,6 +29,7 @@ export function validateEnv(): Env {
     console.error('  NEXT_PUBLIC_BASE_URL=http://localhost:3000')
     console.error('\n📋 Optional:')
     console.error('  API_KEY=your-secure-key (min 32 chars)')
+    console.error('  ADMIN_PASSWORD=your-admin-password')
     console.error('  REQUIRE_AUTH=true|false')
     
     process.exit(1)

@@ -1,5 +1,4 @@
 # Information Board Toolkit - Docker Compose Configuration
-# 遵循 /volume1/docker/deployment-standards/ 规范
 
 services:
   information-board:
@@ -12,9 +11,10 @@ services:
     environment:
       TZ: Asia/Shanghai
       NODE_ENV: production
-      DATABASE_URL: postgresql://huajun:99@postgres:5432/information_board
-      NEXT_PUBLIC_BASE_URL: ${NEXT_PUBLIC_BASE_URL:-http://localhost:3030}
-      API_KEY: ${API_KEY:-}
+      DATABASE_URL: ${DATABASE_URL}
+      NEXT_PUBLIC_BASE_URL: ${NEXT_PUBLIC_BASE_URL}
+      API_KEY: ${API_KEY}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD}
       REQUIRE_AUTH: ${REQUIRE_AUTH:-true}
     
     ports:

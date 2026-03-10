@@ -1,9 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server'
 
-// 管理员密码
-const ADMIN_PASSWORD = '0099'
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || ''
+
+if (!ADMIN_PASSWORD && process.env.NODE_ENV === 'production') {
+  console.error('CRITICAL: ADMIN_PASSWORD not configured in production!')
+}
 
 export async function POST(request: NextRequest) {
+  if (!ADMIN_PASSWORD) {
+    return NextResponse.json(
+      { error: 'Admin authentication not configured' },
+      { status: 503 }
+    )
+  }
+
   try {
     const body = await request.json()
     const { password } = body

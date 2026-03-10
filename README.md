@@ -75,13 +75,16 @@ cp .env.example .env.local
 
 ```env
 # PostgreSQL 数据库连接（必需）
-DATABASE_URL=postgresql://huajun:99@postgres:5432/information_board
+DATABASE_URL=postgresql://user:password@host:5432/information_board
 
 # 应用基础 URL（必需）
 NEXT_PUBLIC_BASE_URL=http://localhost:3000
 
 # API 密钥（生产环境必需，至少 32 字符）
 API_KEY=your-secure-api-key-at-least-32-characters-long
+
+# 管理员密码（可选，用于访问管理页面）
+ADMIN_PASSWORD=your-admin-password
 
 # 是否强制认证（可选）
 REQUIRE_AUTH=true
@@ -320,9 +323,10 @@ services:
     container_name: information-board
     restart: unless-stopped
     environment:
-      - DATABASE_URL=postgresql://huajun:99@postgres:5432/information_board
-      - NEXT_PUBLIC_BASE_URL=https://board.openclaw.ai
+      - DATABASE_URL=postgresql://user:password@postgres:5432/information_board
+      - NEXT_PUBLIC_BASE_URL=https://board.example.com
       - API_KEY=${API_KEY}
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD}
       - REQUIRE_AUTH=true
     ports:
       - "3030:3000"
