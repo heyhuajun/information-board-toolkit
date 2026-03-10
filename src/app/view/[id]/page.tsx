@@ -21,8 +21,12 @@ export default function ViewPage() {
         if (!res.ok) {
           throw new Error('Board not found or expired')
         }
-        const data = await res.json()
-        setBoard(data)
+        const json = await res.json()
+        // 兼容两种 API 响应格式:
+        // 1. 直接返回 board: {id, title, layout, ...}
+        // 2. 包装返回: {success, data: {...}, meta: {...}}
+        const boardData = json.data ? json.data : json
+        setBoard(boardData)
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load board')
       } finally {
