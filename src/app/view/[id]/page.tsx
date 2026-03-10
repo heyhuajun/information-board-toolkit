@@ -64,7 +64,6 @@ export default function ViewPage() {
             <p className="text-gray-600 mt-2">{board.description}</p>
           )}
           <div className="flex items-center gap-4 mt-4 text-sm text-gray-500">
-            <span>👁️ {board.stats.views} 次浏览</span>
             {board.meta?.author && <span>✍️ {board.meta.author}</span>}
             {board.expiresAt && (
               <span>⏰ 有效期至 {new Date(board.expiresAt).toLocaleString('zh-CN')}</span>
