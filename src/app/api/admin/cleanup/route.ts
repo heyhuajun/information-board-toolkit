@@ -9,7 +9,7 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const result = cleanupExpiredBoards()
+    const result = await cleanupExpiredBoards()
     return NextResponse.json({ 
       success: true, 
       deleted: result.deleted,

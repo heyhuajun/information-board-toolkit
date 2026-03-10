@@ -2,9 +2,9 @@ import { z } from 'zod'
 
 const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
-  NEXT_PUBLIC_BASE_URL: z.string().url().optional(),
-  DATABASE_URL: z.string().optional(),
-  API_KEY: z.string().min(16).optional(),
+  NEXT_PUBLIC_BASE_URL: z.string().url(),
+  DATABASE_URL: z.string().startsWith('postgresql://'),
+  API_KEY: z.string().min(32).optional(),
   REQUIRE_AUTH: z.enum(['true', 'false']).optional(),
 })
 
@@ -23,15 +23,14 @@ export function validateEnv(): Env {
       console.error(`  - ${issue.path.join('.')}: ${issue.message}`)
     })
     
-    if (process.env.NODE_ENV === 'production') {
-      process.exit(1)
-    }
+    console.error('\n📋 Required environment variables:')
+    console.error('  DATABASE_URL=postgresql://user:pass@host:port/database')
+    console.error('  NEXT_PUBLIC_BASE_URL=http://localhost:3000')
+    console.error('\n📋 Optional:')
+    console.error('  API_KEY=your-secure-key (min 32 chars)')
+    console.error('  REQUIRE_AUTH=true|false')
     
-    console.warn('⚠️  Using default values for development')
-    validatedEnv = {
-      NODE_ENV: 'development',
-    }
-    return validatedEnv
+    process.exit(1)
   }
 
   validatedEnv = result.data
@@ -39,31 +38,7 @@ export function validateEnv(): Env {
 }
 
 export function checkRequiredEnv(): void {
-  const env = validateEnv()
-
-  if (env.NODE_ENV === 'production') {
-    const missing: string[] = []
-
-    if (!env.NEXT_PUBLIC_BASE_URL) {
-      missing.push('NEXT_PUBLIC_BASE_URL')
-    }
-
-    if (!env.DATABASE_URL) {
-      missing.push('DATABASE_URL')
-    }
-
-    if (!env.API_KEY && env.REQUIRE_AUTH !== 'false') {
-      console.warn('⚠️  WARNING: Running in production without API_KEY. Authentication will be enforced.')
-    }
-
-    if (missing.length > 0) {
-      console.error('❌ Missing required environment variables in production:')
-      missing.forEach((varName) => {
-        console.error(`  - ${varName}`)
-      })
-      process.exit(1)
-    }
-  }
+  validateEnv()
 }
 
 export function getEnv(): Env {

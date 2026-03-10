@@ -1,12 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import db from '@/lib/db'
-
-const ADMIN_PASSWORD = '0099'
-
-function checkAuth(request: NextRequest): boolean {
-  const authHeader = request.headers.get('X-Admin-Auth')
-  return authHeader === ADMIN_PASSWORD
-}
+import { pool } from '@/lib/db'
 
 export async function GET(request: NextRequest) {
   const auth = request.headers.get('Cookie')?.includes('admin_auth=true')
@@ -16,28 +9,19 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const stmt = db.prepare(`
+    const result = await pool.query(`
       SELECT id, title, share_token, views, created_at, expires_at, author
       FROM boards
       ORDER BY created_at DESC
     `)
-    const rows = stmt.all() as Array<{
-      id: string
-      title: string
-      share_token: string
-      views: number
-      created_at: string
-      expires_at: string | null
-      author: string | null
-    }>
 
-    const boards = rows.map(row => ({
+    const boards = result.rows.map(row => ({
       id: row.id,
       title: row.title,
       shareToken: row.share_token,
       views: row.views,
-      createdAt: row.created_at,
-      expiresAt: row.expires_at,
+      createdAt: row.created_at.toISOString(),
+      expiresAt: row.expires_at?.toISOString() || null,
       author: row.author
     }))
 

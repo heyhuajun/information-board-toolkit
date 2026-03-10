@@ -1,43 +1,40 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getBoardByToken, incrementViews, getViewStats } from '@/lib/db'
+import { getBoardByToken, incrementViews, getViewStats, checkRateLimit } from '@/lib/db'
+import { getClientIp } from '@/lib/auth'
+import { ApiSuccess, ApiError } from '@/lib/api'
 import type { ViewBoardResponse } from '@/types'
 
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ token: string }> }
 ) {
+  const clientIp = getClientIp(request) || 'unknown'
+
+  const rateLimitResult = await checkRateLimit('view', clientIp, 100, 60000)
+  if (!rateLimitResult.allowed) {
+    return ApiError.tooManyRequests(
+      'Too many requests. Please try again later.',
+      Math.ceil((rateLimitResult.resetAt.getTime() - Date.now()) / 1000)
+    )
+  }
+
   try {
     const { token } = await params
-
-    // 获取 Board
-    const board = getBoardByToken(token)
+    const board = await getBoardByToken(token)
 
     if (!board) {
-      return NextResponse.json(
-        { error: 'Board not found or expired' },
-        { status: 404 }
-      )
+      return ApiError.notFound('Board not found or expired')
     }
 
-    // 增加浏览量
-    const ip = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip')
     const userAgent = request.headers.get('user-agent')
-    incrementViews(board.id, ip || undefined, userAgent || undefined)
+    await incrementViews(board.id, clientIp, userAgent || undefined)
 
-    // 获取统计信息
-    const stats = getViewStats(board.id)
+    const stats = await getViewStats(board.id)
 
-    const response: ViewBoardResponse = {
-      ...board,
-      stats,
-    }
-
-    return NextResponse.json(response)
+    const response: ViewBoardResponse = { ...board, stats }
+    return ApiSuccess.create(response)
   } catch (error) {
     console.error('Error viewing board:', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
+    return ApiError.internalError()
   }
 }

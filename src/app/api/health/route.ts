@@ -1,9 +1,7 @@
 import { NextResponse } from 'next/server'
-import Database from 'better-sqlite3'
-import path from 'path'
-import fs from 'fs'
+import { healthCheck } from '@/lib/db'
 
-interface HealthCheck {
+interface HealthCheckResult {
   status: 'healthy' | 'unhealthy'
   timestamp: string
   version: string
@@ -23,10 +21,10 @@ interface HealthCheck {
 
 export async function GET() {
   const startTime = Date.now()
-  const health: HealthCheck = {
+  const health: HealthCheckResult = {
     status: 'healthy',
     timestamp: new Date().toISOString(),
-    version: process.env.npm_package_version || '0.1.0',
+    version: process.env.npm_package_version || '0.2.0',
     uptime: process.uptime(),
     checks: {
       database: { status: 'ok' },
@@ -34,27 +32,16 @@ export async function GET() {
     },
   }
 
-  // Database check
-  try {
-    const dbPath = process.env.DATABASE_URL || path.join(process.cwd(), 'data', 'board.db')
-    
-    if (!fs.existsSync(dbPath)) {
-      throw new Error('Database file not found')
-    }
+  const dbStart = Date.now()
+  const dbHealthy = await healthCheck()
+  health.checks.database.latency = Date.now() - dbStart
 
-    const dbStart = Date.now()
-    const db = new Database(dbPath, { readonly: true, fileMustExist: true })
-    db.prepare('SELECT 1').get()
-    db.close()
-    
-    health.checks.database.latency = Date.now() - dbStart
-  } catch (error) {
+  if (!dbHealthy) {
     health.checks.database.status = 'error'
-    health.checks.database.error = error instanceof Error ? error.message : 'Unknown error'
+    health.checks.database.error = 'Database connection failed'
     health.status = 'unhealthy'
   }
 
-  // Environment check
   const missingEnv: string[] = []
   
   if (process.env.NODE_ENV === 'production') {

@@ -34,13 +34,13 @@ describe('Card Component', () => {
 
 describe('Alert Component', () => {
   it('should render alert message', () => {
-    render(<Alert alertType="info" message="This is an info alert" />)
+    render(<Alert type="alert" alertType="info" message="This is an info alert" />)
     
     expect(screen.getByText('This is an info alert')).toBeInTheDocument()
   })
 
   it('should render title when provided', () => {
-    render(<Alert alertType="success" title="Success!" message="Operation completed" />)
+    render(<Alert type="alert" alertType="success" title="Success!" message="Operation completed" />)
     
     expect(screen.getByText('Success!')).toBeInTheDocument()
   })
@@ -48,14 +48,14 @@ describe('Alert Component', () => {
 
 describe('Metric Component', () => {
   it('should render label and value', () => {
-    render(<Metric label="Total Users" value={1500} />)
+    render(<Metric type="metric" label="Total Users" value={1500} />)
     
     expect(screen.getByText('Total Users')).toBeInTheDocument()
     expect(screen.getByText('1500')).toBeInTheDocument()
   })
 
   it('should render change indicator', () => {
-    render(<Metric label="Users" value={100} change="+5%" changeType="positive" />)
+    render(<Metric type="metric" label="Users" value={100} change="+5%" changeType="positive" />)
     
     expect(screen.getByText('+5%')).toBeInTheDocument()
   })

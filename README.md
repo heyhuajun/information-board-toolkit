@@ -74,11 +74,27 @@ cp .env.example .env.local
 编辑 `.env.local`:
 
 ```env
+# PostgreSQL 数据库连接（必需）
+DATABASE_URL=postgresql://huajun:99@postgres:5432/information_board
+
+# 应用基础 URL（必需）
 NEXT_PUBLIC_BASE_URL=http://localhost:3000
-DATABASE_URL=./data/board.db
+
+# API 密钥（生产环境必需，至少 32 字符）
+API_KEY=your-secure-api-key-at-least-32-characters-long
+
+# 是否强制认证（可选）
+REQUIRE_AUTH=true
 ```
 
-### 3. 启动开发服务器
+### 3. 初始化数据库
+
+```bash
+# 运行数据库初始化脚本
+npm run db:init
+```
+
+### 4. 启动开发服务器
 
 ```bash
 npm run dev
@@ -295,18 +311,34 @@ console.log(result.shareUrl)
 
 ## 🐳 Docker 部署
 
+### 使用 docker-compose
+
 ```yaml
 services:
   information-board:
-    build: .
+    image: ghcr.io/heyhuajun/information-board-toolkit:latest
+    container_name: information-board
+    restart: unless-stopped
+    environment:
+      - DATABASE_URL=postgresql://huajun:99@postgres:5432/information_board
+      - NEXT_PUBLIC_BASE_URL=https://board.openclaw.ai
+      - API_KEY=${API_KEY}
+      - REQUIRE_AUTH=true
     ports:
       - "3030:3000"
-    volumes:
-      - ./data:/app/data
-    environment:
-      - DATABASE_URL=/app/data/board.db
-      - NEXT_PUBLIC_BASE_URL=https://board.openclaw.ai
+    networks:
+      - services
+
+networks:
+  services:
+    external: true
 ```
+
+### 数据库要求
+
+- PostgreSQL 14+
+- 需要加入与 PostgreSQL 相同的 Docker 网络
+- 首次部署需要运行数据库初始化脚本
 
 ## 📝 使用场景
 
@@ -323,7 +355,7 @@ services:
 
 - **框架**: Next.js 16 (App Router)
 - **样式**: Tailwind CSS 4
-- **数据库**: SQLite (better-sqlite3)
+- **数据库**: PostgreSQL (pg)
 - **图表**: Recharts
 - **Markdown**: react-markdown
 

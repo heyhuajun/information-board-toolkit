@@ -12,12 +12,10 @@ services:
     environment:
       TZ: Asia/Shanghai
       NODE_ENV: production
-      DATABASE_URL: /app/data/board.db
-      NEXT_PUBLIC_BASE_URL: http://192.168.88.247:3030
+      DATABASE_URL: postgresql://huajun:99@postgres:5432/information_board
+      NEXT_PUBLIC_BASE_URL: ${NEXT_PUBLIC_BASE_URL:-http://localhost:3030}
       API_KEY: ${API_KEY:-}
-    
-    volumes:
-      - ./data:/app/data
+      REQUIRE_AUTH: ${REQUIRE_AUTH:-true}
     
     ports:
       - "3030:3000"

@@ -1,11 +1,11 @@
-import Database from 'better-sqlite3'
+import pg from 'pg'
 import { nanoid } from 'nanoid'
-import path from 'path'
-import fs from 'fs'
 import crypto from 'crypto'
 import type { BoardData, Component, BoardListItem } from '@/types'
+import { getEnv } from './env'
 
-// 数据库行类型定义
+const { Pool } = pg
+
 interface BoardRow {
   id: string
   title: string
@@ -13,201 +13,103 @@ interface BoardRow {
   layout: string
   meta: string | null
   share_token: string
-  owner_token: string
-  expires_at: string | null
+  owner_token_hash: string
+  expires_at: Date | null
   views: number
-  created_at: string
-  updated_at: string
+  created_at: Date
+  updated_at: Date
   author: string | null
 }
 
 interface ViewLogRow {
   id: number
   board_id: string
-  viewed_at: string
+  viewed_at: Date
   ip: string | null
   user_agent: string | null
 }
 
 interface CountRow {
+  count: string
+}
+
+interface RateLimitRow {
   count: number
+  reset_at: Date
 }
 
-// 数据库路径
-const DB_PATH = process.env.DATABASE_URL || path.join(process.cwd(), 'data', 'board.db')
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  max: 10,
+  idleTimeoutMillis: 30000,
+  connectionTimeoutMillis: 2000,
+})
 
-// 确保数据目录存在
-const dbDir = path.dirname(DB_PATH)
-if (!fs.existsSync(dbDir)) {
-  fs.mkdirSync(dbDir, { recursive: true })
-}
+pool.on('error', (err) => {
+  console.error('Unexpected error on idle client', err)
+})
 
-// 初始化数据库
-const db = new Database(DB_PATH)
+export async function initializeDatabase(): Promise<void> {
+  const client = await pool.connect()
+  try {
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS boards (
+        id TEXT PRIMARY KEY,
+        title TEXT NOT NULL,
+        description TEXT,
+        layout JSONB NOT NULL,
+        meta JSONB,
+        share_token TEXT UNIQUE NOT NULL,
+        owner_token_hash TEXT NOT NULL,
+        expires_at TIMESTAMPTZ,
+        views INTEGER DEFAULT 0,
+        created_at TIMESTAMPTZ DEFAULT NOW(),
+        updated_at TIMESTAMPTZ DEFAULT NOW(),
+        author TEXT
+      );
 
-// 创建表（添加 owner_token 字段）
-db.exec(`
-  CREATE TABLE IF NOT EXISTS boards (
-    id TEXT PRIMARY KEY,
-    title TEXT NOT NULL,
-    description TEXT,
-    layout TEXT NOT NULL,
-    meta TEXT,
-    share_token TEXT UNIQUE NOT NULL,
-    owner_token TEXT NOT NULL,
-    expires_at TEXT,
-    views INTEGER DEFAULT 0,
-    created_at TEXT DEFAULT (datetime('now')),
-    updated_at TEXT DEFAULT (datetime('now')),
-    author TEXT
-  );
+      CREATE TABLE IF NOT EXISTS view_logs (
+        id SERIAL PRIMARY KEY,
+        board_id TEXT NOT NULL REFERENCES boards(id) ON DELETE CASCADE,
+        viewed_at TIMESTAMPTZ DEFAULT NOW(),
+        ip TEXT,
+        user_agent TEXT
+      );
 
-  CREATE TABLE IF NOT EXISTS view_logs (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    board_id TEXT NOT NULL,
-    viewed_at TEXT DEFAULT (datetime('now')),
-    ip TEXT,
-    user_agent TEXT,
-    FOREIGN KEY (board_id) REFERENCES boards(id)
-  );
+      CREATE TABLE IF NOT EXISTS rate_limits (
+        id SERIAL PRIMARY KEY,
+        identifier TEXT NOT NULL,
+        client_ip TEXT NOT NULL,
+        count INTEGER DEFAULT 1,
+        reset_at TIMESTAMPTZ NOT NULL,
+        created_at TIMESTAMPTZ DEFAULT NOW(),
+        UNIQUE(identifier, client_ip)
+      );
 
-  CREATE INDEX IF NOT EXISTS idx_boards_share_token ON boards(share_token);
-  CREATE INDEX IF NOT EXISTS idx_boards_owner_token ON boards(owner_token);
-  CREATE INDEX IF NOT EXISTS idx_boards_author ON boards(author);
-  CREATE INDEX IF NOT EXISTS idx_boards_created_at ON boards(created_at);
-  CREATE INDEX IF NOT EXISTS idx_boards_expires_at ON boards(expires_at);
-  CREATE INDEX IF NOT EXISTS idx_view_logs_board_id ON view_logs(board_id);
-  CREATE INDEX IF NOT EXISTS idx_view_logs_viewed_at ON view_logs(viewed_at);
-`)
-
-// 迁移：为已存在的表添加 owner_token 列（如果不存在）
-try {
-  const tableInfo = db.prepare('PRAGMA table_info(boards)').all() as { name: string }[]
-  const hasOwnerToken = tableInfo.some(col => col.name === 'owner_token')
-  if (!hasOwnerToken) {
-    db.exec('ALTER TABLE boards ADD COLUMN owner_token TEXT')
-    // 为现有记录生成 owner_token
-    const existingBoards = db.prepare('SELECT id FROM boards WHERE owner_token IS NULL').all() as { id: string }[]
-    const updateStmt = db.prepare('UPDATE boards SET owner_token = ? WHERE id = ?')
-    for (const board of existingBoards) {
-      updateStmt.run(nanoid(16), board.id)
-    }
-  }
-  } catch (e) {
-    console.warn('Database migration warning (may be expected for new databases):', e)
-  }
-
-// 计算过期时间
-function calculateExpiresAt(expiresIn: string): string | null {
-  const now = new Date()
-  switch (expiresIn) {
-    case '1h':
-      return new Date(now.getTime() + 60 * 60 * 1000).toISOString()
-    case '24h':
-      return new Date(now.getTime() + 24 * 60 * 60 * 1000).toISOString()
-    case '7d':
-      return new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000).toISOString()
-    case '30d':
-      return new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000).toISOString()
-    case 'never':
-    default:
-      return null
+      CREATE INDEX IF NOT EXISTS idx_boards_share_token ON boards(share_token);
+      CREATE INDEX IF NOT EXISTS idx_boards_author ON boards(author);
+      CREATE INDEX IF NOT EXISTS idx_boards_expires_at ON boards(expires_at);
+      CREATE INDEX IF NOT EXISTS idx_boards_created_at ON boards(created_at);
+      CREATE INDEX IF NOT EXISTS idx_view_logs_board_id ON view_logs(board_id);
+      CREATE INDEX IF NOT EXISTS idx_view_logs_viewed_at ON view_logs(viewed_at);
+      CREATE INDEX IF NOT EXISTS idx_rate_limits_reset ON rate_limits(reset_at);
+      CREATE INDEX IF NOT EXISTS idx_rate_limits_lookup ON rate_limits(identifier, client_ip);
+    `)
+    console.log('Database tables initialized')
+  } finally {
+    client.release()
   }
 }
 
-// 创建 Board（返回包含 ownerToken）
-export function createBoard(data: {
-  title: string
-  description?: string
-  layout: Component
-  expiresIn?: string
-  meta?: { author?: string; tags?: string[] }
-}): BoardData & { ownerToken: string } {
-  const id = nanoid()
-  const shareToken = nanoid(16)
-  const ownerToken = nanoid(16)
-  const expiresAt = data.expiresIn ? calculateExpiresAt(data.expiresIn) : null
-
-  const stmt = db.prepare(`
-    INSERT INTO boards (id, title, description, layout, meta, share_token, owner_token, expires_at, author)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-  `)
-
-  stmt.run(
-    id,
-    data.title,
-    data.description || null,
-    JSON.stringify(data.layout),
-    data.meta ? JSON.stringify(data.meta) : null,
-    shareToken,
-    ownerToken,
-    expiresAt,
-    data.meta?.author || null
-  )
-
-  const board = getBoardById(id)!
-  return { ...board, ownerToken }
+function hashToken(token: string): string {
+  return crypto.createHash('sha256').update(token).digest('hex')
 }
 
-// 根据 ID 获取 Board
-export function getBoardById(id: string): BoardData | null {
-  const stmt = db.prepare('SELECT * FROM boards WHERE id = ?')
-  const row = stmt.get(id) as BoardRow | undefined
-
-  if (!row) return null
-
-  return {
-    id: row.id,
-    title: row.title,
-    description: row.description ?? undefined,
-    layout: JSON.parse(row.layout),
-    meta: row.meta ? JSON.parse(row.meta) : undefined,
-    shareToken: row.share_token,
-    expiresAt: row.expires_at ?? undefined,
-    views: row.views,
-    createdAt: row.created_at,
-    updatedAt: row.updated_at,
-  }
-}
-
-// 根据 share_token 获取 Board
-export function getBoardByToken(token: string): BoardData | null {
-  const stmt = db.prepare('SELECT * FROM boards WHERE share_token = ?')
-  const row = stmt.get(token) as BoardRow | undefined
-
-  if (!row) return null
-
-  // 检查是否过期
-  if (row.expires_at) {
-    const expiresAt = new Date(row.expires_at)
-    if (expiresAt < new Date()) {
-      return null // 已过期
-    }
-  }
-
-  return {
-    id: row.id,
-    title: row.title,
-    description: row.description ?? undefined,
-    layout: JSON.parse(row.layout),
-    meta: row.meta ? JSON.parse(row.meta) : undefined,
-    shareToken: row.share_token,
-    expiresAt: row.expires_at ?? undefined,
-    views: row.views,
-    createdAt: row.created_at,
-    updatedAt: row.updated_at,
-  }
-}
-
-// 时序安全比较函数
 function timingSafeEqualString(a: string, b: string): boolean {
-  // 将字符串转换为固定长度的 buffer
   const bufA = Buffer.from(a, 'utf8')
   const bufB = Buffer.from(b, 'utf8')
   
-  // 如果长度不同，用 dummy 比较来保持恒定时间
   if (bufA.length !== bufB.length) {
-    // 仍然执行比较以保持恒定时间
     crypto.timingSafeEqual(bufA, bufA)
     return false
   }
@@ -215,24 +117,117 @@ function timingSafeEqualString(a: string, b: string): boolean {
   return crypto.timingSafeEqual(bufA, bufB)
 }
 
-// 验证 owner_token（时序安全）
-export function verifyOwnerToken(id: string, ownerToken: string): boolean {
+function calculateExpiresAt(expiresIn: string): Date | null {
+  const now = new Date()
+  switch (expiresIn) {
+    case '1h':
+      return new Date(now.getTime() + 60 * 60 * 1000)
+    case '24h':
+      return new Date(now.getTime() + 24 * 60 * 60 * 1000)
+    case '7d':
+      return new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000)
+    case '30d':
+      return new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000)
+    case 'never':
+    default:
+      return null
+  }
+}
+
+function mapRowToBoardData(row: BoardRow): BoardData {
+  return {
+    id: row.id,
+    title: row.title,
+    description: row.description ?? undefined,
+    layout: typeof row.layout === 'string' ? JSON.parse(row.layout) : row.layout,
+    meta: row.meta ? (typeof row.meta === 'string' ? JSON.parse(row.meta) : row.meta) : undefined,
+    shareToken: row.share_token,
+    expiresAt: row.expires_at?.toISOString() ?? undefined,
+    views: row.views,
+    createdAt: row.created_at.toISOString(),
+    updatedAt: row.updated_at.toISOString(),
+  }
+}
+
+export async function createBoard(data: {
+  title: string
+  description?: string
+  layout: Component
+  expiresIn?: string
+  meta?: { author?: string; tags?: string[] }
+}): Promise<BoardData & { ownerToken: string }> {
+  const id = nanoid()
+  const shareToken = nanoid(16)
+  const ownerToken = nanoid(16)
+  const ownerTokenHash = hashToken(ownerToken)
+  const expiresAt = data.expiresIn ? calculateExpiresAt(data.expiresIn) : null
+
+  const result = await pool.query<BoardRow>(
+    `INSERT INTO boards (id, title, description, layout, meta, share_token, owner_token_hash, expires_at, author)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+     RETURNING *`,
+    [
+      id,
+      data.title,
+      data.description || null,
+      JSON.stringify(data.layout),
+      data.meta ? JSON.stringify(data.meta) : null,
+      shareToken,
+      ownerTokenHash,
+      expiresAt,
+      data.meta?.author || null,
+    ]
+  )
+
+  const board = mapRowToBoardData(result.rows[0])
+  return { ...board, ownerToken }
+}
+
+export async function getBoardById(id: string): Promise<BoardData | null> {
+  const result = await pool.query<BoardRow>(
+    'SELECT * FROM boards WHERE id = $1',
+    [id]
+  )
+
+  if (result.rows.length === 0) return null
+  return mapRowToBoardData(result.rows[0])
+}
+
+export async function getBoardByToken(token: string): Promise<BoardData | null> {
+  const result = await pool.query<BoardRow>(
+    'SELECT * FROM boards WHERE share_token = $1',
+    [token]
+  )
+
+  if (result.rows.length === 0) return null
+
+  const row = result.rows[0]
+  if (row.expires_at && new Date(row.expires_at) < new Date()) {
+    return null
+  }
+
+  return mapRowToBoardData(row)
+}
+
+export async function verifyOwnerToken(id: string, ownerToken: string): Promise<boolean> {
   if (!ownerToken || typeof ownerToken !== 'string') {
     return false
   }
-  
-  const stmt = db.prepare('SELECT owner_token FROM boards WHERE id = ?')
-  const row = stmt.get(id) as { owner_token: string } | undefined
-  
-  if (!row?.owner_token) {
+
+  const result = await pool.query<{ owner_token_hash: string }>(
+    'SELECT owner_token_hash FROM boards WHERE id = $1',
+    [id]
+  )
+
+  if (result.rows.length === 0 || !result.rows[0].owner_token_hash) {
     return false
   }
-  
-  return timingSafeEqualString(row.owner_token, ownerToken)
+
+  const providedHash = hashToken(ownerToken)
+  return timingSafeEqualString(result.rows[0].owner_token_hash, providedHash)
 }
 
-// 更新 Board
-export function updateBoard(
+export async function updateBoard(
   id: string,
   data: {
     title?: string
@@ -240,151 +235,219 @@ export function updateBoard(
     layout?: Component
     meta?: { author?: string; tags?: string[] }
   }
-): boolean {
+): Promise<boolean> {
   const updates: string[] = []
-  const values: (string | number | null)[] = []
+  const values: (string | number | null | object)[] = []
+  let paramIndex = 1
 
   if (data.title !== undefined) {
-    updates.push('title = ?')
+    updates.push(`title = $${paramIndex++}`)
     values.push(data.title)
   }
   if (data.description !== undefined) {
-    updates.push('description = ?')
+    updates.push(`description = $${paramIndex++}`)
     values.push(data.description)
   }
   if (data.layout !== undefined) {
-    updates.push('layout = ?')
+    updates.push(`layout = $${paramIndex++}`)
     values.push(JSON.stringify(data.layout))
   }
   if (data.meta !== undefined) {
-    updates.push('meta = ?')
+    updates.push(`meta = $${paramIndex++}`)
     values.push(JSON.stringify(data.meta))
   }
 
   if (updates.length === 0) return false
 
-  updates.push("updated_at = datetime('now')")
+  updates.push(`updated_at = NOW()`)
   values.push(id)
 
-  const stmt = db.prepare(`UPDATE boards SET ${updates.join(', ')} WHERE id = ?`)
-  const result = stmt.run(...values)
+  const result = await pool.query(
+    `UPDATE boards SET ${updates.join(', ')} WHERE id = $${paramIndex}`,
+    values
+  )
 
-  return result.changes > 0
+  return (result.rowCount ?? 0) > 0
 }
 
-// 删除 Board
-export function deleteBoard(id: string): boolean {
-  const stmt = db.prepare('DELETE FROM boards WHERE id = ?')
-  const result = stmt.run(id)
-  return result.changes > 0
+export async function deleteBoard(id: string): Promise<boolean> {
+  const result = await pool.query('DELETE FROM boards WHERE id = $1', [id])
+  return (result.rowCount ?? 0) > 0
 }
 
-// 列出 Boards
-export function listBoards(options: {
+export async function listBoards(options: {
   author?: string
   limit?: number
   offset?: number
-}): { items: BoardListItem[]; total: number } {
+}): Promise<{ items: BoardListItem[]; total: number }> {
   const { author, limit = 10, offset = 0 } = options
 
   let whereClause = ''
   const params: (string | number)[] = []
 
   if (author) {
-    whereClause = 'WHERE author = ?'
+    whereClause = 'WHERE author = $1'
     params.push(author)
   }
 
-  // 获取总数
-  const countStmt = db.prepare(`SELECT COUNT(*) as count FROM boards ${whereClause}`)
-  const countResult = countStmt.get(...params) as CountRow
-  const total = countResult.count
+  const countResult = await pool.query<CountRow>(
+    `SELECT COUNT(*) as count FROM boards ${whereClause}`,
+    params
+  )
+  const total = parseInt(countResult.rows[0].count, 10)
 
-  // 获取列表
-  const listStmt = db.prepare(`
-    SELECT id, title, views, created_at
-    FROM boards
-    ${whereClause}
-    ORDER BY created_at DESC
-    LIMIT ? OFFSET ?
-  `)
-  const rows = listStmt.all(...params, limit, offset) as Array<{ id: string; title: string; views: number; created_at: string }>
+  const listResult = await pool.query<{ id: string; title: string; views: number; created_at: Date }>(
+    `SELECT id, title, views, created_at
+     FROM boards
+     ${whereClause}
+     ORDER BY created_at DESC
+     LIMIT $${params.length + 1} OFFSET $${params.length + 2}`,
+    [...params, limit, offset]
+  )
 
-  // 映射字段名：created_at -> createdAt
-  const items: BoardListItem[] = rows.map(row => ({
+  const items: BoardListItem[] = listResult.rows.map(row => ({
     id: row.id,
     title: row.title,
     views: row.views,
-    createdAt: row.created_at,
+    createdAt: row.created_at.toISOString(),
   }))
 
   return { items, total }
 }
 
-// 增加浏览量
-export function incrementViews(id: string, ip?: string, userAgent?: string): void {
+export async function incrementViews(id: string, ip?: string, userAgent?: string): Promise<void> {
+  const client = await pool.connect()
   try {
-    // 更新浏览量
-    const updateStmt = db.prepare('UPDATE boards SET views = views + 1 WHERE id = ?')
-    updateStmt.run(id)
-
-    // 记录浏览日志
-    const logStmt = db.prepare(`
-      INSERT INTO view_logs (board_id, ip, user_agent, viewed_at)
-      VALUES (?, ?, ?, datetime('now'))
-    `)
-    logStmt.run(id, ip || null, userAgent || null)
+    await client.query('BEGIN')
+    
+    await client.query('UPDATE boards SET views = views + 1 WHERE id = $1', [id])
+    
+    await client.query(
+      `INSERT INTO view_logs (board_id, ip, user_agent, viewed_at)
+       VALUES ($1, $2, $3, NOW())`,
+      [id, ip || null, userAgent || null]
+    )
+    
+    await client.query('COMMIT')
   } catch (error) {
+    await client.query('ROLLBACK')
     console.error('Failed to increment views:', error)
-    // 不抛出错误，避免影响主请求流程
+  } finally {
+    client.release()
   }
 }
 
-// 获取浏览统计
-export function getViewStats(id: string): {
+export async function getViewStats(id: string): Promise<{
   views: number
   lastViewed?: string
-} {
-  const board = getBoardById(id)
+}> {
+  const board = await getBoardById(id)
   if (!board) return { views: 0 }
 
-  const lastViewStmt = db.prepare(`
-    SELECT viewed_at FROM view_logs
-    WHERE board_id = ?
-    ORDER BY viewed_at DESC
-    LIMIT 1
-  `)
-  const lastView = lastViewStmt.get(id) as ViewLogRow | undefined
+  const result = await pool.query<{ viewed_at: Date }>(
+    `SELECT viewed_at FROM view_logs
+     WHERE board_id = $1
+     ORDER BY viewed_at DESC
+     LIMIT 1`,
+    [id]
+  )
 
   return {
     views: board.views,
-    lastViewed: lastView?.viewed_at,
+    lastViewed: result.rows[0]?.viewed_at?.toISOString(),
   }
 }
 
-export function cleanupExpiredBoards(): { deleted: number } {
-  const now = new Date().toISOString()
-  
-  const findStmt = db.prepare(`
-    SELECT id FROM boards 
-    WHERE expires_at IS NOT NULL AND expires_at < ?
-  `)
-  const expiredBoards = findStmt.all(now) as Array<{ id: string }>
-  
-  if (expiredBoards.length === 0) {
-    return { deleted: 0 }
+export async function cleanupExpiredBoards(): Promise<{ deleted: number }> {
+  const client = await pool.connect()
+  try {
+    await client.query('BEGIN')
+
+    const findResult = await client.query<{ id: string }>(
+      `SELECT id FROM boards WHERE expires_at IS NOT NULL AND expires_at < NOW()`
+    )
+
+    if (findResult.rows.length === 0) {
+      await client.query('COMMIT')
+      return { deleted: 0 }
+    }
+
+    const ids = findResult.rows.map(r => r.id)
+    
+    await client.query(`DELETE FROM view_logs WHERE board_id = ANY($1)`, [ids])
+    
+    const deleteResult = await client.query(`DELETE FROM boards WHERE id = ANY($1)`, [ids])
+
+    await client.query('COMMIT')
+    return { deleted: deleteResult.rowCount ?? 0 }
+  } catch (error) {
+    await client.query('ROLLBACK')
+    throw error
+  } finally {
+    client.release()
   }
-  
-  const ids = expiredBoards.map(b => b.id)
-  const placeholders = ids.map(() => '?').join(',')
-  
-  const deleteViewLogs = db.prepare(`DELETE FROM view_logs WHERE board_id IN (${placeholders})`)
-  deleteViewLogs.run(...ids)
-  
-  const deleteBoards = db.prepare(`DELETE FROM boards WHERE id IN (${placeholders})`)
-  const result = deleteBoards.run(...ids)
-  
-  return { deleted: result.changes }
 }
 
-export default db
+export async function checkRateLimit(
+  identifier: string,
+  clientIp: string,
+  maxRequests: number,
+  windowMs: number
+): Promise<{ allowed: boolean; remaining: number; resetAt: Date }> {
+  const now = new Date()
+  const resetAt = new Date(now.getTime() + windowMs)
+
+  const client = await pool.connect()
+  try {
+    await client.query('BEGIN')
+
+    await client.query(
+      `DELETE FROM rate_limits WHERE reset_at < NOW()`
+    )
+
+    const result = await client.query<RateLimitRow>(
+      `SELECT count, reset_at FROM rate_limits WHERE identifier = $1 AND client_ip = $2 FOR UPDATE`,
+      [identifier, clientIp]
+    )
+
+    if (result.rows.length === 0) {
+      await client.query(
+        `INSERT INTO rate_limits (identifier, client_ip, count, reset_at) VALUES ($1, $2, 1, $3)`,
+        [identifier, clientIp, resetAt]
+      )
+      await client.query('COMMIT')
+      return { allowed: true, remaining: maxRequests - 1, resetAt }
+    }
+
+    const current = result.rows[0]
+    if (current.count >= maxRequests) {
+      await client.query('COMMIT')
+      return { allowed: false, remaining: 0, resetAt: current.reset_at }
+    }
+
+    await client.query(
+      `UPDATE rate_limits SET count = count + 1 WHERE identifier = $1 AND client_ip = $2`,
+      [identifier, clientIp]
+    )
+
+    await client.query('COMMIT')
+    return { allowed: true, remaining: maxRequests - current.count - 1, resetAt: current.reset_at }
+  } catch (error) {
+    await client.query('ROLLBACK')
+    throw error
+  } finally {
+    client.release()
+  }
+}
+
+export async function healthCheck(): Promise<boolean> {
+  try {
+    const result = await pool.query('SELECT 1')
+    return result.rowCount === 1
+  } catch {
+    return false
+  }
+}
+
+export { pool }
+export default pool

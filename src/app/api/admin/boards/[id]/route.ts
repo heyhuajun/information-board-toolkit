@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import db from '@/lib/db'
+import { pool } from '@/lib/db'
 
 export async function DELETE(
   request: NextRequest,
@@ -14,13 +14,10 @@ export async function DELETE(
   try {
     const { id } = await params
 
-    const deleteViewLogs = db.prepare('DELETE FROM view_logs WHERE board_id = ?')
-    deleteViewLogs.run(id)
+    await pool.query('DELETE FROM view_logs WHERE board_id = $1', [id])
+    const result = await pool.query('DELETE FROM boards WHERE id = $1', [id])
 
-    const deleteBoard = db.prepare('DELETE FROM boards WHERE id = ?')
-    const result = deleteBoard.run(id)
-
-    if (result.changes > 0) {
+    if ((result.rowCount ?? 0) > 0) {
       return NextResponse.json({ success: true })
     } else {
       return NextResponse.json({ error: '看板不存在' }, { status: 404 })
