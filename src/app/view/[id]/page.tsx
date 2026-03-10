@@ -43,82 +43,46 @@ export default function ViewPage() {
     setExporting(true)
 
     try {
-      // 注入临时 CSS 覆盖 Tailwind CSS 4 的 lab() 颜色函数
-      // html2canvas 不支持 lab() 现代颜色函数
-      const styleId = 'export-color-override'
-      let overrideStyle = document.getElementById(styleId)
-      if (!overrideStyle) {
-        overrideStyle = document.createElement('style')
-        overrideStyle.id = styleId
-        overrideStyle.textContent = `
-          *, *::before, *::after {
-            color: #111827 !important;
-            background-color: #ffffff !important;
-            border-color: #e5e7eb !important;
-          }
-          .text-gray-900, .text-gray-800, .text-gray-700, .text-gray-600, .text-gray-500 {
-            color: #111827 !important;
-          }
-          .text-blue-600, .text-blue-700 {
-            color: #2563eb !important;
-          }
-          .text-red-600, .text-red-500 {
-            color: #dc2626 !important;
-          }
-          .text-green-600, .text-green-500 {
-            color: #16a34a !important;
-          }
-          .text-yellow-600, .text-yellow-500 {
-            color: #ca8a04 !important;
-          }
-          .bg-white {
-            background-color: #ffffff !important;
-          }
-          .bg-gray-50 {
-            background-color: #f9fafb !important;
-          }
-          .bg-blue-600, .bg-blue-700 {
-            background-color: #2563eb !important;
-          }
-        `
-        document.head.appendChild(overrideStyle)
-      }
-
-      // 等待样式生效
-      await new Promise(resolve => setTimeout(resolve, 100))
-
-      const html2canvas = (await import('html2canvas')).default
+      // 使用 modern-screenshot 替代 html2canvas
+      // modern-screenshot 使用 SVG foreignObject，自动支持所有现代 CSS（包括 lab() 颜色函数）
+      const { domToBlob } = await import('modern-screenshot')
       const { jsPDF } = await import('jspdf')
 
-      const canvas = await html2canvas(contentRef.current, {
+      const element = contentRef.current
+      const blob = await domToBlob(element, {
         scale: 2,
-        useCORS: true,
-        logging: false,
-        backgroundColor: '#f9fafb'
       })
 
-      // 移除临时样式
-      if (overrideStyle && overrideStyle.parentNode) {
-        overrideStyle.parentNode.removeChild(overrideStyle)
+      if (!blob) {
+        throw new Error('Failed to capture screenshot')
       }
+
+      const img = new Image()
+      const imgDataUrl = URL.createObjectURL(blob)
+      
+      await new Promise<void>((resolve, reject) => {
+        img.onload = () => resolve()
+        img.onerror = () => reject(new Error('Failed to load image'))
+        img.src = imgDataUrl
+      })
 
       const imgWidth = 210
       const pageHeight = 297
-      const imgHeight = (canvas.height * imgWidth) / canvas.width
+      const imgHeight = (img.height * imgWidth) / img.width
       let heightLeft = imgHeight
 
       const pdf = new jsPDF('p', 'mm', 'a4')
-      let position = 0
 
-      pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, position, imgWidth, imgHeight)
+      pdf.addImage(img, 'PNG', 0, 0, imgWidth, imgHeight)
       heightLeft -= pageHeight
 
       while (heightLeft > 0) {
-        position = heightLeft - imgHeight
         pdf.addPage()
-        pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, position, imgWidth, imgHeight)
+        pdf.addImage(img, 'PNG', 0, heightLeft - imgHeight, imgWidth, imgHeight)
         heightLeft -= pageHeight
       }
+
+      URL.revokeObjectURL(imgDataUrl)
 
       const filename = board.title.replace(/[^a-zA-Z0-9\u4e00-\u9fa5]/g, '_') || 'board'
       pdf.save(`${filename}.pdf`)
