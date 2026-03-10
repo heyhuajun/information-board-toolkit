@@ -362,4 +362,29 @@ export function getViewStats(id: string): {
   }
 }
 
+export function cleanupExpiredBoards(): { deleted: number } {
+  const now = new Date().toISOString()
+  
+  const findStmt = db.prepare(`
+    SELECT id FROM boards 
+    WHERE expires_at IS NOT NULL AND expires_at < ?
+  `)
+  const expiredBoards = findStmt.all(now) as Array<{ id: string }>
+  
+  if (expiredBoards.length === 0) {
+    return { deleted: 0 }
+  }
+  
+  const ids = expiredBoards.map(b => b.id)
+  const placeholders = ids.map(() => '?').join(',')
+  
+  const deleteViewLogs = db.prepare(`DELETE FROM view_logs WHERE board_id IN (${placeholders})`)
+  deleteViewLogs.run(...ids)
+  
+  const deleteBoards = db.prepare(`DELETE FROM boards WHERE id IN (${placeholders})`)
+  const result = deleteBoards.run(...ids)
+  
+  return { deleted: result.changes }
+}
+
 export default db

@@ -36,13 +36,13 @@ export default function DemoPage() {
         <section className="text-center mb-16">
           <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-blue-50 text-blue-600 text-sm font-medium mb-6">
             <span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
-            新设计系统
+            设计演示
           </div>
           <h1 className="text-4xl font-bold text-slate-900 mb-4">
-            克制 · 简单 · 美观
+            Information Board Toolkit
           </h1>
           <p className="text-lg text-slate-500 max-w-xl mx-auto">
-            更少的选择，更好的体验。专注于内容本身。
+            为 Agent 提供的信息展示工具，快速生成可分享的内容页面。
           </p>
         </section>
 
@@ -475,8 +475,6 @@ export default function DemoPage() {
           <div className="flex items-center justify-between text-sm text-slate-500">
             <div>Information Board Toolkit</div>
             <div className="flex items-center gap-4">
-              <span>克制 · 简单 · 美观</span>
-              <span>·</span>
               <span>v0.2.0</span>
             </div>
           </div>
