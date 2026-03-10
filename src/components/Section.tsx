@@ -6,8 +6,13 @@ export default function Section({ title, description, children }: SectionCompone
     <div className="mb-8">
       {(title || description) && (
         <div className="mb-4">
-          {title && <h2 className="text-2xl font-bold text-gray-900 mb-2">{title}</h2>}
-          {description && <p className="text-gray-600">{description}</p>}
+          {title && (
+            <div className="flex items-center gap-2 mb-2">
+              <div className="w-1 h-5 bg-slate-900 rounded-full"></div>
+              <h2 className="text-lg font-semibold text-slate-900">{title}</h2>
+            </div>
+          )}
+          {description && <p className="text-slate-500 ml-3">{description}</p>}
         </div>
       )}
       <div className="space-y-6">

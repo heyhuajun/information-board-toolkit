@@ -3,34 +3,40 @@ import Image from 'next/image'
 
 export default function Card({ title, value, change, changeType, image, footer }: Omit<CardComponent, 'type'>) {
   const changeColor = changeType === 'positive' 
-    ? 'text-green-600' 
+    ? 'text-emerald-600' 
     : changeType === 'negative' 
-    ? 'text-red-600' 
-    : 'text-gray-600'
+    ? 'text-rose-500' 
+    : 'text-slate-500'
+
+  const changeBg = changeType === 'positive'
+    ? 'bg-emerald-50'
+    : changeType === 'negative'
+    ? 'bg-rose-50'
+    : 'bg-slate-50'
 
   return (
-    <div className="bg-white rounded-lg shadow p-6">
+    <div className="bg-white rounded-2xl border border-slate-100 p-6" style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.02), 0 4px 12px rgba(0,0,0,0.04)' }}>
       {image && (
         <Image 
           src={image} 
           alt={title} 
           width={400}
           height={192}
-          className="w-full h-48 object-cover rounded-lg mb-4"
+          className="w-full h-48 object-cover rounded-xl mb-4"
           unoptimized
         />
       )}
-      <h3 className="text-gray-500 text-sm mb-2">{title}</h3>
+      <p className="text-sm text-slate-500 mb-2">{title}</p>
       <div className="flex items-baseline gap-2">
-        <p className="text-3xl font-bold text-gray-900">{value}</p>
+        <p className="text-3xl font-bold text-slate-900">{value}</p>
         {change && (
-          <span className={`text-sm font-medium ${changeColor}`}>
+          <span className={`text-sm font-medium ${changeColor} ${changeBg} px-2 py-0.5 rounded-full`}>
             {change}
           </span>
         )}
       </div>
       {footer && (
-        <p className="text-gray-500 text-xs mt-2">{footer}</p>
+        <p className="text-slate-400 text-xs mt-2">{footer}</p>
       )}
     </div>
   )

@@ -533,3 +533,91 @@ curl http://192.168.88.247:3030/api/board/view/xxx
 # 健康检查
 curl http://192.168.88.247:3030/api/health
 ```
+
+## 页面设计最佳实践
+
+### 1. 视觉层次
+
+- 使用 Section 组织内容，每个 Section 应该有明确的主题
+- 重要的指标使用 CardGrid (columns: 3-4) 放在最前面
+- 关键结论使用 Alert (alertType: "success") 突出显示
+- 风险警告使用 Alert (alertType: "warning" 或 "error")
+- 使用 Divider 分隔不同主题区域
+
+### 2. 信息密度
+
+**执行摘要**：使用 CardGrid 展示 3-4 个核心指标，配合 Alert 突出核心结论
+
+**详细分析**：使用 Section + Table/List/Markdown 展示详细数据
+
+**对比分析**：使用 CompareTable 或 Table 展示对比数据
+
+**用户原声**：使用 Quote 展示用户访谈内容，增加可信度
+
+**时间规划**：使用 Timeline 展示路线图或计划
+
+### 3. 语义颜色使用
+
+| changeType/alertType | 用途 | 示例 |
+|---------------------|------|------|
+| positive/success | 增长、盈利、机会、优势 | +15%, 完成, 推荐 |
+| negative/error | 下降、亏损、风险、劣势 | -5%, 错误, 警告 |
+| warning | 需要注意的问题 | 需关注, 待定 |
+| neutral/info | 中性数据、提示信息 | 持平, 说明 |
+
+### 4. 组件选择指南
+
+| 内容类型 | 推荐组件 | 说明 |
+|---------|---------|------|
+| 核心指标 | CardGrid (columns: 3-4) | 醒目展示关键数字 |
+| 数据对比 | Table 或 CompareTable | 结构化对比信息 |
+| 列表要点 | List | 条理清晰的要点 |
+| 趋势展示 | Chart (line/bar) | 数据趋势可视化 |
+| 重要提示 | Alert | 需要引起注意的信息 |
+| 分组内容 | Section | 组织相关内容 |
+| 用户引用 | Quote | 展示用户原声 |
+| 时间规划 | Timeline | 展示时间线或进度 |
+| 数据来源 | DataSource | 标注数据可信度 |
+
+### 5. 页面布局模板
+
+**完整报告模板**：
+```
+Section (执行摘要)
+├── Alert (核心结论 - alertType: success)
+├── CardGrid (3-4个核心指标)
+├── Divider
+
+Section (详细分析)
+├── Table 或 Chart
+├── List
+├── Divider
+
+Section (风险/建议)
+├── Alert (warning 或 error)
+├── Timeline 或 List
+
+Section (数据来源)
+├── DataSource
+```
+
+**快速报告模板**：
+```
+CardGrid (3-4个核心指标)
+
+Section (关键发现)
+├── List
+├── Alert (建议)
+
+DataSource
+```
+
+### 6. 设计原则
+
+**对比性**：使用 changeType 突出数据变化方向，让读者快速识别好坏
+
+**可读性**：Section 标题简洁有力，描述性文字放在 description 字段
+
+**完整性**：每个报告应包含数据来源标注 (DataSource)，增强可信度
+
+**一致性**：同类信息使用相同组件展示，保持视觉统一
