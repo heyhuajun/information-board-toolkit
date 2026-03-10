@@ -46,29 +46,38 @@ export default function ViewPage() {
       const html2canvas = (await import('html2canvas')).default
       const { jsPDF } = await import('jspdf')
 
+      // 修复 html2canvas 不支持 Tailwind CSS 4 的 lab() 颜色函数
+      // 在导出前遍历所有元素，将 lab() 颜色替换为固定值
+      const allElements = contentRef.current.querySelectorAll('*')
+      const colorMap = new Map<HTMLElement, { color?: string; bgColor?: string }>()
+      
+      allElements.forEach((el) => {
+        const htmlEl = el as HTMLElement
+        const style = window.getComputedStyle(htmlEl)
+        const color = style.color
+        const bgColor = style.backgroundColor
+        
+        if (color && color.includes('lab(')) {
+          colorMap.set(htmlEl, { ...colorMap.get(htmlEl), color: '#111827' })
+          htmlEl.style.color = '#111827'
+        }
+        if (bgColor && bgColor.includes('lab(')) {
+          colorMap.set(htmlEl, { ...colorMap.get(htmlEl), bgColor: '#ffffff' })
+          htmlEl.style.backgroundColor = '#ffffff'
+        }
+      })
+
       const canvas = await html2canvas(contentRef.current, {
         scale: 2,
         useCORS: true,
         logging: false,
-        backgroundColor: '#f9fafb',
-        onclone: (clonedDoc) => {
-          // 修复 html2canvas 不支持 Tailwind CSS 4 的 lab() 颜色函数
-          const allElements = clonedDoc.querySelectorAll('*')
-          allElements.forEach((el) => {
-            const htmlEl = el as HTMLElement
-            const style = clonedDoc.defaultView?.getComputedStyle(htmlEl)
-            if (style) {
-              const color = style.color
-              const bgColor = style.backgroundColor
-              if (color && color.includes('lab(')) {
-                htmlEl.style.color = '#111827'
-              }
-              if (bgColor && bgColor.includes('lab(')) {
-                htmlEl.style.backgroundColor = '#ffffff'
-              }
-            }
-          })
-        }
+        backgroundColor: '#f9fafb'
+      })
+
+      // 恢复原始颜色
+      colorMap.forEach((colors, el) => {
+        if (colors.color) el.style.color = ''
+        if (colors.bgColor) el.style.backgroundColor = ''
       })
 
       const imgWidth = 210
