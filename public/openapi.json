@@ -1,0 +1,822 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Information Board Toolkit API",
+    "description": "API for creating and managing information boards with beautiful visualizations",
+    "version": "1.0.0",
+    "contact": {
+      "name": "OpenClaw",
+      "url": "https://github.com/heyhuajun/information-board-toolkit"
+    }
+  },
+  "servers": [
+    {
+      "url": "/api",
+      "description": "Current server"
+    }
+  ],
+  "security": [
+    {
+      "ApiKeyAuth": []
+    }
+  ],
+  "paths": {
+    "/board/submit": {
+      "post": {
+        "summary": "Create a new board",
+        "description": "Creates a new information board with the provided layout and returns share URL and owner token",
+        "operationId": "createBoard",
+        "tags": ["Board"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SubmitBoardRequest"
+              },
+              "examples": {
+                "simple": {
+                  "summary": "Simple card board",
+                  "value": {
+                    "title": "My Dashboard",
+                    "description": "A simple dashboard with cards",
+                    "layout": {
+                      "type": "section",
+                      "title": "Overview",
+                      "children": [
+                        {
+                          "type": "card",
+                          "title": "Revenue",
+                          "value": "$10,000"
+                        }
+                      ]
+                    },
+                    "expiresIn": "7d"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Board created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SubmitBoardResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Invalid or missing API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many requests - Rate limit exceeded",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/board/view/{token}": {
+      "get": {
+        "summary": "View a board by share token",
+        "description": "Retrieves a board using its share token. Increments view count and returns board data with stats",
+        "operationId": "viewBoard",
+        "tags": ["Board"],
+        "security": [],
+        "parameters": [
+          {
+            "name": "token",
+            "in": "path",
+            "required": true,
+            "description": "Board share token",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Board data with stats",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ViewBoardResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Board not found or expired",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many requests - Rate limit exceeded",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/board/{id}": {
+      "put": {
+        "summary": "Update a board",
+        "description": "Updates an existing board. Requires owner token for authorization",
+        "operationId": "updateBoard",
+        "tags": ["Board"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Board ID",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "X-Owner-Token",
+            "in": "header",
+            "required": true,
+            "description": "Owner token received when creating the board",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateBoardRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Board updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BoardData"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - Invalid or missing owner token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Board not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete a board",
+        "description": "Deletes a board. Requires owner token for authorization",
+        "operationId": "deleteBoard",
+        "tags": ["Board"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Board ID",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "X-Owner-Token",
+            "in": "header",
+            "required": true,
+            "description": "Owner token received when creating the board",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Board deleted successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - Invalid or missing owner token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Board not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/board/list": {
+      "get": {
+        "summary": "List boards",
+        "description": "Retrieves a paginated list of boards, optionally filtered by author",
+        "operationId": "listBoards",
+        "tags": ["Board"],
+        "parameters": [
+          {
+            "name": "author",
+            "in": "query",
+            "description": "Filter by author name",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Number of results per page (default: 10)",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "description": "Number of results to skip (default: 0)",
+            "schema": {
+              "type": "integer",
+              "minimum": 0
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of boards",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListBoardsResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/board/{id}/export": {
+      "get": {
+        "summary": "Export board as PDF",
+        "description": "Exports a board as a PDF document",
+        "operationId": "exportBoard",
+        "tags": ["Board"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Board ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "PDF file",
+            "content": {
+              "application/pdf": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Board not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/cron/cleanup": {
+      "post": {
+        "summary": "Cleanup expired boards",
+        "description": "Cron job endpoint to delete expired boards. Optionally requires CRON_SECRET for authentication",
+        "operationId": "cleanupExpiredBoards",
+        "tags": ["Cron"],
+        "security": [],
+        "parameters": [
+          {
+            "name": "Authorization",
+            "in": "header",
+            "description": "Bearer token if CRON_SECRET is configured",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Cleanup completed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "deleted": {
+                      "type": "integer",
+                      "description": "Number of expired boards deleted"
+                    },
+                    "timestamp": {
+                      "type": "string",
+                      "format": "date-time"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Invalid cron secret",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/health": {
+      "get": {
+        "summary": "Health check",
+        "description": "Returns the health status of the API",
+        "operationId": "healthCheck",
+        "tags": ["System"],
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "Service is healthy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "enum": ["ok", "error"]
+                    },
+                    "database": {
+                      "type": "string",
+                      "enum": ["connected", "disconnected"]
+                    },
+                    "timestamp": {
+                      "type": "string",
+                      "format": "date-time"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Service unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "enum": ["error"]
+                    },
+                    "database": {
+                      "type": "string",
+                      "enum": ["disconnected"]
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "ApiKeyAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-API-Key",
+        "description": "API key for authentication. Required in production environment."
+      }
+    },
+    "schemas": {
+      "SubmitBoardRequest": {
+        "type": "object",
+        "required": ["title", "layout"],
+        "properties": {
+          "title": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200,
+            "description": "Board title"
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 1000,
+            "description": "Optional board description"
+          },
+          "layout": {
+            "$ref": "#/components/schemas/Component"
+          },
+          "expiresIn": {
+            "type": "string",
+            "enum": ["1h", "24h", "7d", "30d", "never"],
+            "default": "never",
+            "description": "Board expiration time"
+          },
+          "meta": {
+            "type": "object",
+            "properties": {
+              "author": {
+                "type": "string"
+              },
+              "tags": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      },
+      "UpdateBoardRequest": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 1000
+          },
+          "layout": {
+            "$ref": "#/components/schemas/Component"
+          },
+          "meta": {
+            "type": "object",
+            "properties": {
+              "author": {
+                "type": "string"
+              },
+              "tags": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      },
+      "SubmitBoardResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "data": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "shareUrl": {
+                "type": "string",
+                "format": "uri"
+              },
+              "ownerToken": {
+                "type": "string",
+                "description": "Token required for update/delete operations"
+              },
+              "expiresAt": {
+                "type": "string",
+                "format": "date-time",
+                "nullable": true
+              },
+              "createdAt": {
+                "type": "string",
+                "format": "date-time"
+              }
+            }
+          },
+          "meta": {
+            "type": "object",
+            "properties": {
+              "timestamp": {
+                "type": "string",
+                "format": "date-time"
+              }
+            }
+          }
+        }
+      },
+      "ViewBoardResponse": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/BoardData"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "stats": {
+                "type": "object",
+                "properties": {
+                  "views": {
+                    "type": "integer"
+                  },
+                  "lastViewed": {
+                    "type": "string",
+                    "format": "date-time",
+                    "nullable": true
+                  }
+                }
+              }
+            }
+          }
+        ]
+      },
+      "BoardData": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string",
+            "nullable": true
+          },
+          "layout": {
+            "$ref": "#/components/schemas/Component"
+          },
+          "meta": {
+            "type": "object",
+            "properties": {
+              "author": {
+                "type": "string"
+              },
+              "tags": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "shareToken": {
+            "type": "string"
+          },
+          "expiresAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "views": {
+            "type": "integer"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "ListBoardsResponse": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BoardListItem"
+            }
+          },
+          "total": {
+            "type": "integer"
+          }
+        }
+      },
+      "BoardListItem": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "views": {
+            "type": "integer"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "Component": {
+        "type": "object",
+        "required": ["type"],
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "section",
+              "card",
+              "content-card",
+              "card-grid",
+              "table",
+              "list",
+              "metric",
+              "chart",
+              "markdown",
+              "image",
+              "alert",
+              "divider",
+              "dataSource",
+              "compareTable",
+              "dataBadge",
+              "tag",
+              "badge",
+              "quote",
+              "timeline",
+              "progress",
+              "collapse",
+              "comments",
+              "versionHistory",
+              "template",
+              "imageGallery"
+            ]
+          }
+        },
+        "description": "Component definition. Structure varies by type."
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "enum": [false]
+          },
+          "error": {
+            "type": "object",
+            "properties": {
+              "code": {
+                "type": "string"
+              },
+              "message": {
+                "type": "string"
+              },
+              "details": {
+                "type": "string"
+              }
+            }
+          },
+          "meta": {
+            "type": "object",
+            "properties": {
+              "timestamp": {
+                "type": "string",
+                "format": "date-time"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "tags": [
+    {
+      "name": "Board",
+      "description": "Board management operations"
+    },
+    {
+      "name": "Cron",
+      "description": "Scheduled job endpoints"
+    },
+    {
+      "name": "System",
+      "description": "System status endpoints"
+    }
+  ]
+}
