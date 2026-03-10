@@ -45,25 +45,24 @@ export default function ViewPage() {
     try {
       // 使用 modern-screenshot 替代 html2canvas
       // modern-screenshot 使用 SVG foreignObject，自动支持所有现代 CSS（包括 lab() 颜色函数）
-      const { domToBlob } = await import('modern-screenshot')
+      const { domToPng } = await import('modern-screenshot')
       const { jsPDF } = await import('jspdf')
 
       const element = contentRef.current
-      const blob = await domToBlob(element, {
+      const dataUrl = await domToPng(element, {
         scale: 2,
       })
 
-      if (!blob) {
+      if (!dataUrl) {
         throw new Error('Failed to capture screenshot')
       }
 
       const img = new Image()
-      const imgDataUrl = URL.createObjectURL(blob)
       
       await new Promise<void>((resolve, reject) => {
         img.onload = () => resolve()
         img.onerror = () => reject(new Error('Failed to load image'))
-        img.src = imgDataUrl
+        img.src = dataUrl
       })
 
       const imgWidth = 210
@@ -81,8 +80,6 @@ export default function ViewPage() {
         pdf.addImage(img, 'PNG', 0, heightLeft - imgHeight, imgWidth, imgHeight)
         heightLeft -= pageHeight
       }
-
-      URL.revokeObjectURL(imgDataUrl)
 
       const filename = board.title.replace(/[^a-zA-Z0-9\u4e00-\u9fa5]/g, '_') || 'board'
       pdf.save(`${filename}.pdf`)
