@@ -50,7 +50,25 @@ export default function ViewPage() {
         scale: 2,
         useCORS: true,
         logging: false,
-        backgroundColor: '#f9fafb'
+        backgroundColor: '#f9fafb',
+        onclone: (clonedDoc) => {
+          // 修复 html2canvas 不支持 Tailwind CSS 4 的 lab() 颜色函数
+          const allElements = clonedDoc.querySelectorAll('*')
+          allElements.forEach((el) => {
+            const htmlEl = el as HTMLElement
+            const style = clonedDoc.defaultView?.getComputedStyle(htmlEl)
+            if (style) {
+              const color = style.color
+              const bgColor = style.backgroundColor
+              if (color && color.includes('lab(')) {
+                htmlEl.style.color = '#111827'
+              }
+              if (bgColor && bgColor.includes('lab(')) {
+                htmlEl.style.backgroundColor = '#ffffff'
+              }
+            }
+          })
+        }
       })
 
       const imgWidth = 210
