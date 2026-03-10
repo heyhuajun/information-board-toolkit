@@ -43,29 +43,52 @@ export default function ViewPage() {
     setExporting(true)
 
     try {
+      // 注入临时 CSS 覆盖 Tailwind CSS 4 的 lab() 颜色函数
+      // html2canvas 不支持 lab() 现代颜色函数
+      const styleId = 'export-color-override'
+      let overrideStyle = document.getElementById(styleId)
+      if (!overrideStyle) {
+        overrideStyle = document.createElement('style')
+        overrideStyle.id = styleId
+        overrideStyle.textContent = `
+          *, *::before, *::after {
+            color: #111827 !important;
+            background-color: #ffffff !important;
+            border-color: #e5e7eb !important;
+          }
+          .text-gray-900, .text-gray-800, .text-gray-700, .text-gray-600, .text-gray-500 {
+            color: #111827 !important;
+          }
+          .text-blue-600, .text-blue-700 {
+            color: #2563eb !important;
+          }
+          .text-red-600, .text-red-500 {
+            color: #dc2626 !important;
+          }
+          .text-green-600, .text-green-500 {
+            color: #16a34a !important;
+          }
+          .text-yellow-600, .text-yellow-500 {
+            color: #ca8a04 !important;
+          }
+          .bg-white {
+            background-color: #ffffff !important;
+          }
+          .bg-gray-50 {
+            background-color: #f9fafb !important;
+          }
+          .bg-blue-600, .bg-blue-700 {
+            background-color: #2563eb !important;
+          }
+        `
+        document.head.appendChild(overrideStyle)
+      }
+
+      // 等待样式生效
+      await new Promise(resolve => setTimeout(resolve, 100))
+
       const html2canvas = (await import('html2canvas')).default
       const { jsPDF } = await import('jspdf')
-
-      // 修复 html2canvas 不支持 Tailwind CSS 4 的 lab() 颜色函数
-      // 在导出前遍历所有元素，将 lab() 颜色替换为固定值
-      const allElements = contentRef.current.querySelectorAll('*')
-      const colorMap = new Map<HTMLElement, { color?: string; bgColor?: string }>()
-      
-      allElements.forEach((el) => {
-        const htmlEl = el as HTMLElement
-        const style = window.getComputedStyle(htmlEl)
-        const color = style.color
-        const bgColor = style.backgroundColor
-        
-        if (color && color.includes('lab(')) {
-          colorMap.set(htmlEl, { ...colorMap.get(htmlEl), color: '#111827' })
-          htmlEl.style.color = '#111827'
-        }
-        if (bgColor && bgColor.includes('lab(')) {
-          colorMap.set(htmlEl, { ...colorMap.get(htmlEl), bgColor: '#ffffff' })
-          htmlEl.style.backgroundColor = '#ffffff'
-        }
-      })
 
       const canvas = await html2canvas(contentRef.current, {
         scale: 2,
@@ -74,11 +97,10 @@ export default function ViewPage() {
         backgroundColor: '#f9fafb'
       })
 
-      // 恢复原始颜色
-      colorMap.forEach((colors, el) => {
-        if (colors.color) el.style.color = ''
-        if (colors.bgColor) el.style.backgroundColor = ''
-      })
+      // 移除临时样式
+      if (overrideStyle && overrideStyle.parentNode) {
+        overrideStyle.parentNode.removeChild(overrideStyle)
+      }
 
       const imgWidth = 210
       const pageHeight = 297
