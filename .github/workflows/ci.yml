@@ -26,6 +26,27 @@ jobs:
 
   test:
     runs-on: ubuntu-latest
+    
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: test
+          POSTGRES_PASSWORD: test
+          POSTGRES_DB: information_board_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    
+    env:
+      DATABASE_URL: postgresql://test:test@localhost:5432/information_board_test
+      NEXT_PUBLIC_BASE_URL: http://localhost:3000
+      NODE_ENV: test
+    
     steps:
       - uses: actions/checkout@v4
       
@@ -37,6 +58,9 @@ jobs:
       
       - name: Install dependencies
         run: npm ci
+      
+      - name: Initialize database
+        run: npm run db:init
       
       - name: Run tests
         run: npm run test:run
@@ -83,20 +107,29 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
       
-      - name: Login to Docker Hub
+      - name: Login to GitHub Container Registry
         uses: docker/login-action@v3
-        if: ${{ secrets.DOCKER_USERNAME != '' }}
         with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository }}
+          tags: |
+            type=ref,event=branch
+            type=sha,prefix=
+            type=raw,value=latest,enable={{is_default_branch}}
       
       - name: Build and push
         uses: docker/build-push-action@v5
         with:
           context: .
-          push: ${{ secrets.DOCKER_USERNAME != '' }}
-          tags: |
-            ${{ secrets.DOCKER_USERNAME }}/information-board:latest
-            ${{ secrets.DOCKER_USERNAME }}/information-board:${{ github.sha }}
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max

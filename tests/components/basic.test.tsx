@@ -21,13 +21,13 @@ describe('Card Component', () => {
 
   it('should apply correct change color for positive', () => {
     const { container } = render(<Card title="Test" value={0} change="+10%" changeType="positive" />)
-    const changeElement = container.querySelector('.text-green-600')
+    const changeElement = container.querySelector('.text-emerald-600')
     expect(changeElement).toBeInTheDocument()
   })
 
   it('should apply correct change color for negative', () => {
     const { container } = render(<Card title="Test" value={0} change="-10%" changeType="negative" />)
-    const changeElement = container.querySelector('.text-red-600')
+    const changeElement = container.querySelector('.text-rose-500')
     expect(changeElement).toBeInTheDocument()
   })
 })
