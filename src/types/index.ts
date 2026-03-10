@@ -25,6 +25,7 @@ export type ComponentType =
   | 'comments'        // Phase 2: 评论
   | 'versionHistory'  // Phase 2: 版本历史
   | 'template'        // Phase 2: 模板
+  | 'imageGallery'    // 图片画廊
 
 export type ChangeType = 'positive' | 'negative' | 'neutral'
 export type AlertType = 'info' | 'success' | 'warning' | 'error'
@@ -129,6 +130,20 @@ export interface ImageComponent extends BaseComponent {
   src: string
   caption?: string
   width?: 'full' | 'half' | 'third'
+}
+
+export interface GalleryImage {
+  src: string
+  caption?: string
+  alt?: string
+}
+
+export interface ImageGalleryComponent extends BaseComponent {
+  type: 'imageGallery'
+  images: GalleryImage[]
+  columns?: 2 | 3 | 4
+  gap?: 'sm' | 'md' | 'lg'
+  enableLightbox?: boolean
 }
 
 // Alert 组件
@@ -312,6 +327,7 @@ export type Component =
   | ChartComponent
   | MarkdownComponent
   | ImageComponent
+  | ImageGalleryComponent
   | AlertComponent
   | DividerComponent
   | DataSourceComponent

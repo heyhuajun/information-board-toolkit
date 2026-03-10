@@ -9,6 +9,7 @@ import Metric from './Metric'
 import Chart from './Chart'
 import Markdown from './Markdown'
 import Image from './Image'
+import ImageGallery from './ImageGallery'
 import Alert from './Alert'
 import Divider from './Divider'
 // Phase 1 组件
@@ -51,8 +52,9 @@ export default function ComponentRenderer({ component }: ComponentRendererProps)
     case 'markdown':
       return <Markdown {...component} />
     case 'image':
-      // eslint-disable-next-line jsx-a11y/alt-text -- Custom Image component handles alt internally
       return <Image {...component} />
+    case 'imageGallery':
+      return <ImageGallery {...component} />
     case 'alert':
       return <Alert {...component} />
     case 'divider':
