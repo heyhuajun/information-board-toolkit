@@ -1,14 +1,4 @@
 import Link from 'next/link'
-import Card from '@/components/Card'
-import Table from '@/components/Table'
-import List from '@/components/List'
-import Metric from '@/components/Metric'
-import Quote from '@/components/Quote'
-import Timeline from '@/components/Timeline'
-import Alert from '@/components/Alert'
-import Divider from '@/components/Divider'
-import CompareTable from '@/components/CompareTable'
-import DataSource from '@/components/DataSource'
 
 export default function DemoPage() {
   return (
@@ -333,7 +323,7 @@ export default function DemoPage() {
               </div>
               <div className="flex-1">
                 <p className="text-lg text-slate-700 leading-relaxed mb-4">
-                  "产品体验非常流畅，客服响应也很及时。使用三个月以来，团队协作效率提升了 40%。"
+                  &ldquo;产品体验非常流畅，客服响应也很及时。使用三个月以来，团队协作效率提升了 40%。&rdquo;
                 </p>
                 <div className="flex items-center gap-3">
                   <span className="font-medium text-slate-900">王明</span>

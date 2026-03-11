@@ -8,7 +8,7 @@ import List from './List'
 import Metric from './Metric'
 import Chart from './Chart'
 import Markdown from './Markdown'
-import Image from './Image'
+import CustomImage from './Image'
 import ImageGallery from './ImageGallery'
 import Alert from './Alert'
 import Divider from './Divider'
@@ -52,7 +52,7 @@ export default function ComponentRenderer({ component }: ComponentRendererProps)
     case 'markdown':
       return <Markdown {...component} />
     case 'image':
-      return <Image {...component} />
+      return <CustomImage {...component} />
     case 'imageGallery':
       return <ImageGallery {...component} />
     case 'alert':
