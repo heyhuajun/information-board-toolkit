@@ -5,7 +5,7 @@ import ComponentRenderer from './ComponentRenderer'
 interface DataSourceProps {
   source: string
   url?: string
-  timestamp: Date | string
+  timestamp?: Date | string
   confidence?: number
   freshness?: number
   content?: string
@@ -45,19 +45,21 @@ export default function DataSource({
     return Math.floor(diff / (1000 * 60 * 60 * 24))
   }
 
-  const days = freshness ?? calculateDays(timestamp)
+  const days = freshness ?? (timestamp ? calculateDays(timestamp) : 0)
   const freshnessInfo = getFreshnessBadge(days)
   const confidenceInfo = confidence !== undefined ? getConfidenceStars(confidence) : null
 
-  const formattedTime = typeof timestamp === 'string' 
-    ? timestamp 
-    : timestamp.toLocaleString('zh-CN', { 
-        year: 'numeric', 
-        month: '2-digit', 
-        day: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit'
-      })
+  const formattedTime = !timestamp
+    ? '未知时间'
+    : typeof timestamp === 'string'
+      ? timestamp
+      : timestamp.toLocaleString('zh-CN', {
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit',
+          hour: '2-digit',
+          minute: '2-digit'
+        })
 
   return (
     <div className="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden">

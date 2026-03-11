@@ -11,7 +11,8 @@ export default function Comments({
   const [replyingTo, setReplyingTo] = useState<string | null>(null)
   const [replyContent, setReplyContent] = useState('')
 
-  const formatDate = (date: Date | string) => {
+  const formatDate = (date?: Date | string) => {
+    if (!date) return '未知时间'
     const d = typeof date === 'string' ? new Date(date) : date
     const now = new Date()
     const diff = now.getTime() - d.getTime()

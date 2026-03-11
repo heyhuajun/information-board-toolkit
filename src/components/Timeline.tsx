@@ -33,7 +33,8 @@ export default function Timeline({
     }
   }
 
-  const formatDate = (date: Date | string) => {
+  const formatDate = (date?: Date | string) => {
+    if (!date) return ''
     const d = typeof date === 'string' ? new Date(date) : date
     return d.toLocaleDateString('zh-CN', {
       year: 'numeric',

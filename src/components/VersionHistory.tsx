@@ -9,7 +9,8 @@ export default function VersionHistory({
 }: Omit<VersionHistoryComponent, 'type'>) {
   const [selectedVersions, setSelectedVersions] = useState<number[]>([])
 
-  const formatDate = (date: Date | string) => {
+  const formatDate = (date?: Date | string) => {
+    if (!date) return '未知时间'
     const d = typeof date === 'string' ? new Date(date) : date
     return d.toLocaleString('zh-CN', {
       year: 'numeric',

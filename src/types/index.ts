@@ -166,7 +166,7 @@ export interface DataSourceComponent extends BaseComponent {
   type: 'dataSource'
   source: string
   url?: string
-  timestamp: Date | string
+  timestamp?: Date | string
   confidence?: number
   freshness?: number
   content?: string
@@ -278,7 +278,7 @@ export interface Comment {
   author: string
   avatar?: string
   content: string
-  createdAt: Date | string
+  createdAt?: Date | string
   replies?: Comment[]
 }
 
@@ -292,7 +292,7 @@ export interface CommentsComponent extends BaseComponent {
 // VersionHistory 版本历史组件
 export interface Version {
   version: number
-  createdAt: Date | string
+  createdAt?: Date | string
   author?: string
   changes?: string[]
 }
