@@ -2,7 +2,6 @@ import pg from 'pg'
 import { nanoid } from 'nanoid'
 import crypto from 'crypto'
 import type { BoardData, Component, BoardListItem } from '@/types'
-import { getEnv } from './env'
 
 const { Pool } = pg
 
@@ -19,14 +18,6 @@ interface BoardRow {
   created_at: Date
   updated_at: Date
   author: string | null
-}
-
-interface ViewLogRow {
-  id: number
-  board_id: string
-  viewed_at: Date
-  ip: string | null
-  user_agent: string | null
 }
 
 interface CountRow {

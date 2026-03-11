@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest } from 'next/server'
 import { updateBoard, deleteBoard, getBoardById, verifyOwnerToken } from '@/lib/db'
 import { validateApiKey, unauthorizedResponse, errorResponse } from '@/lib/auth'
 import { ApiError, ApiSuccess } from '@/lib/api'
