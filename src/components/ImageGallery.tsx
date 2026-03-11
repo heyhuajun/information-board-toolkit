@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import Image from 'next/image'
 import type { ImageGalleryComponent } from '@/types'
 
 export default function ImageGallery({
@@ -70,11 +71,13 @@ export default function ImageGallery({
             onClick={() => openLightbox(index)}
           >
             <div className="aspect-square">
-              <img
+              <Image
                 src={image.src}
                 alt={image.alt || image.caption || `图片 ${index + 1}`}
-                className="w-full h-full object-cover transition-transform duration-200 group-hover:scale-105"
+                fill
+                className="object-cover transition-transform duration-200 group-hover:scale-105"
                 loading="lazy"
+                unoptimized
               />
             </div>
             {image.caption && (
@@ -127,12 +130,16 @@ export default function ImageGallery({
             </svg>
           </button>
 
-          <img
-            src={images[selectedIndex].src}
-            alt={images[selectedIndex].alt || images[selectedIndex].caption || `图片 ${selectedIndex + 1}`}
-            className="max-w-[90vw] max-h-[90vh] object-contain"
-            onClick={(e) => e.stopPropagation()}
-          />
+          <div className="relative w-[90vw] h-[90vh]">
+            <Image
+              src={images[selectedIndex].src}
+              alt={images[selectedIndex].alt || images[selectedIndex].caption || `图片 ${selectedIndex + 1}`}
+              fill
+              className="object-contain"
+              onClick={(e) => e.stopPropagation()}
+              unoptimized
+            />
+          </div>
 
           {images[selectedIndex].caption && (
             <div className="absolute bottom-4 left-1/2 -translate-x-1/2 text-white text-center">
